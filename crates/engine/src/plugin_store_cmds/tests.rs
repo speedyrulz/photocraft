@@ -180,6 +180,26 @@ fn uninstall_cancels_a_download_in_flight() {
 }
 
 #[test]
+fn a_cancelled_download_keeps_its_slot_until_it_answers() {
+    let entries: Vec<Entry> = (0..MAX_RUNNING + 1).map(|k| entry(&format!("org.test.store.slot{k}"), "1", &module(&format!("org.test.store.slot{k}"), "1"))).collect();
+    let ids: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();
+    let (mut s, served) = session(entries);
+    s.execute("plugin.store.install", json!({"ids": ids[..MAX_RUNNING]})).unwrap();
+    assert_eq!(served.lock().unwrap().len(), MAX_RUNNING);
+    // Uninstalling one doesn't free its slot while its download is still out.
+    s.execute("plugin.store.uninstall", json!({"id": ids[0]})).unwrap();
+    s.execute("plugin.store.install", json!({"id": ids[MAX_RUNNING]})).unwrap();
+    assert_eq!(served.lock().unwrap().len(), MAX_RUNNING, "no extra download starts");
+    // Once it answers, the queued one starts.
+    let (_, tx) = served.lock().unwrap().remove(0);
+    tx.send(Err("late".into())).unwrap();
+    s.plugin_store.poll();
+    assert_eq!(served.lock().unwrap().len(), MAX_RUNNING);
+    assert!(served.lock().unwrap().last().unwrap().0.contains(&ids[MAX_RUNNING]));
+    assert!(listing(&mut s, &ids[0]).get("job").is_none(), "the cancelled one reports nothing");
+}
+
+#[test]
 fn a_new_catalog_version_is_offered_as_an_update() {
     let id = "org.test.store.update";
     let old = module(id, "1.0.0");

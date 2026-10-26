@@ -94,7 +94,16 @@ pub struct PluginStore {
     #[cfg(not(target_arch = "wasm32"))]
     dir: Option<std::path::PathBuf>,
     jobs: BTreeMap<String, Job>,
-    running: Vec<(String, Receiver<FetchResult>)>,
+    running: Vec<Running>,
+}
+
+/// A download in flight. One uninstalled while it runs is `cancelled`: it keeps its slot until
+/// the transport answers (the transport can't be stopped; it has its own timeout), so uninstall
+/// and install again can't run more than [`MAX_RUNNING`] at once, and its result is dropped.
+struct Running {
+    id: String,
+    rx: Receiver<FetchResult>,
+    cancelled: bool,
 }
 
 impl Default for PluginStore {
@@ -158,7 +167,7 @@ impl PluginStore {
     pub fn poll(&mut self) -> bool {
         let mut changed = false;
         let mut k = 0;
-        while let Some((id, rx)) = self.running.get(k) {
+        while let Some(Running { id, rx, cancelled }) = self.running.get(k) {
             let result = match rx.try_recv() {
                 Ok(r) => r,
                 Err(TryRecvError::Empty) => {
@@ -167,8 +176,11 @@ impl PluginStore {
                 }
                 Err(TryRecvError::Disconnected) => Err("the download stopped before it finished".into()),
             };
-            let id = id.clone();
+            let (id, cancelled) = (id.clone(), *cancelled);
             self.running.remove(k);
+            if cancelled {
+                continue;
+            }
             let done = match self.entry(&id).cloned() {
                 Some(entry) => result.and_then(|bytes| self.finish(&entry, &bytes)),
                 None => Err("no longer in the catalog".into()),
@@ -199,7 +211,7 @@ impl PluginStore {
             };
             match started {
                 Ok(rx) => {
-                    self.running.push((id.clone(), rx));
+                    self.running.push(Running { id: id.clone(), rx, cancelled: false });
                     self.jobs.insert(id, Job::Downloading);
                 }
                 Err(message) => {
@@ -376,7 +388,9 @@ fn uninstall(s: &mut Session, p: &Value) -> Result<Value> {
         let deleted = store.delete(id).map_err(EngineError::Other)?;
         // A queued or running download would otherwise install it again when it finishes.
         store.jobs.remove(id);
-        store.running.retain(|(running, _)| running != id);
+        for r in store.running.iter_mut().filter(|r| r.id == *id) {
+            r.cancelled = true;
+        }
         if registry::remove(id) || deleted {
             removed.push(id.clone());
         }
