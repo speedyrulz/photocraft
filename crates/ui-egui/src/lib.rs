@@ -178,6 +178,7 @@ pub mod pattern_preview;
 pub mod perspective_crop_ui;
 pub mod perspective_ui;
 pub mod pixel_grid;
+pub mod plugin_store_ui;
 pub mod plugin_ui;
 pub mod point_curve;
 pub mod prefs_ui;
@@ -614,6 +615,10 @@ pub struct Services {
     pub beep: Option<fn()>,
     /// Starts a background check for published releases (desktop, outside Flatpak).
     pub check_updates: Option<photocraft_engine::updates_cmds::CheckFn>,
+    /// Downloads plug-ins for Plugins › Browse Plugins… in the background (desktop).
+    pub fetch_plugin: Option<photocraft_engine::plugin_store_cmds::FetchFn>,
+    /// Where plug-ins installed from the catalog are kept between runs (desktop).
+    pub plugin_dir: Option<std::path::PathBuf>,
     /// Files delivered asynchronously (web drag-and-drop): drained every frame and opened as
     /// documents.
     pub inbox: Option<Inbox>,
@@ -1066,6 +1071,12 @@ impl SyntheticTarget {
 impl PhotocraftApp {
     pub fn new(mut session: Session, mut services: Services) -> Self {
         session.updates.check = services.check_updates.take();
+        session.plugin_store.fetch = services.fetch_plugin.take();
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(dir) = services.plugin_dir.take() {
+            let report = session.plugin_store.set_dir(dir);
+            log::info!("catalog plug-ins: {report}");
+        }
         let mut app = Self {
             session,
             ui: UiState::default(),
@@ -2406,6 +2417,7 @@ impl PhotocraftApp {
         shape_stroke_ui::sync_editor(self, ctx);
         prefs_ui::tick(self, ctx);
         updates_ui::tick(self, ctx);
+        plugin_store_ui::tick(self, ctx);
         monitor_status::poll_frame(self, ctx, frame);
         // Control requests and persisted preferences can change the language in this frame.
         i18n::sync_context(ctx, &self.session.prefs().interface.language);
@@ -2603,6 +2615,7 @@ impl PhotocraftApp {
         canvas::extra_windows(self, &ctx);
         notices::show(self, &ctx);
         updates_ui::show(self, &ctx);
+        plugin_store_ui::show(self, &ctx);
         gpu_status::show_fallback(self, &ctx);
         kys_import::show_offer(self, &ctx);
         if self.titlebar_modal_drag(chrome) {

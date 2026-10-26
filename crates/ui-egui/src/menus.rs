@@ -18,7 +18,7 @@ pub(crate) fn modal_allows(app: &PhotocraftApp, id: &str) -> bool {
 }
 
 /// Top-level menus in Photoshop order.
-pub const TOP_MENUS: [&str; 10] = ["File", "Edit", "Image", "Layer", "Type", "Select", "Filter", "View", "Window", "Help"];
+pub const TOP_MENUS: [&str; 11] = ["File", "Edit", "Image", "Layer", "Type", "Select", "Filter", "View", "Plugins", "Window", "Help"];
 
 /// UI-level commands (handled by the shell rather than the engine): id, label, menu, shortcut.
 /// The table is the engine's ([`photocraft_engine::shell_commands::SHELL_COMMANDS`]), so the
@@ -348,6 +348,8 @@ pub(crate) fn invoke_unguarded(app: &mut PhotocraftApp, ctx: &egui::Context, id:
             Ok(Value::Null)
         }
         "help.about" => Ok(json!({"dialog": app.ui.open_dialog(DialogKind::About, Default::default())})),
+        "plugins.browse" => Ok(crate::plugin_store_ui::open(app, false)),
+        "plugins.manage" => Ok(crate::plugin_store_ui::open(app, true)),
         "help.systemInfo" => {
             let mut fields = serde_json::Map::new();
             fields.insert("systemInfo".into(), json!(true));
@@ -742,7 +744,7 @@ pub fn is_enabled(app: &PhotocraftApp, id: &str) -> bool {
         | "window.panel.closeOthers"
         | "window.panel.minimize"
         | "window.panel.iconic" => !app.session.prefs().workspace_locked,
-        "file.open" | "file.exit" | "file.clearRecent" | "file.removeRecent" | "help.about" | "help.systemInfo" | "edit.search" => true,
+        "file.open" | "file.exit" | "file.clearRecent" | "file.removeRecent" | "help.about" | "help.systemInfo" | "edit.search" | "plugins.browse" | "plugins.manage" => true,
         i if i.starts_with("file.openRecent.") => true,
         i if i.starts_with(DOCUMENT_ITEM) => true,
         i if crate::links::url_for(i).is_some() => true,

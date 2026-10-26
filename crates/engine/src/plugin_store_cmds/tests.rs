@@ -1,0 +1,249 @@
+use super::*;
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
+
+/// A minimal plug-in with its own `id` and `version` (leaves pixels alone).
+fn module(id: &str, version: &str) -> Vec<u8> {
+    let manifest = format!(r#"{{"id":"{id}","name":"Store {id}","version":"{version}","kind":"filter"}}"#);
+    let src = format!(
+        r#"(module
+  (memory (export "memory") 1)
+  (data (i32.const 16) "{data}")
+  (func (export "pc_abi_version") (result i32) (i32.const 1))
+  (func (export "pc_manifest") (result i64) (i64.or (i64.shl (i64.const {len}) (i64.const 32)) (i64.const 16)))
+  (func (export "pc_alloc") (param $n i32) (result i32) (i32.const 0))
+  (func (export "pc_filter") (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32) (i32.const 0)))"#,
+        data = manifest.replace('"', "\\\""),
+        len = manifest.len()
+    );
+    wat::parse_str(src).unwrap()
+}
+
+fn entry(id: &str, version: &str, bytes: &[u8]) -> Entry {
+    Entry {
+        id: id.into(),
+        name: format!("Store {id}"),
+        version: version.into(),
+        author: "Test".into(),
+        description: "A test listing".into(),
+        collection: "Tests".into(),
+        repo: "https://github.com/example/tests".into(),
+        license: "MIT".into(),
+        url: format!("https://raw.githubusercontent.com/example/tests/0/{id}.wasm"),
+        sha256: hex(&Sha256::digest(bytes)),
+        size: bytes.len(),
+    }
+}
+
+type Served = Arc<Mutex<Vec<(String, mpsc::Sender<FetchResult>)>>>;
+
+/// A session whose catalog is `entries` and whose transport records requests for the test to answer.
+fn session(entries: Vec<Entry>) -> (Session, Served) {
+    let mut s = Session::new();
+    s.plugin_store.catalog = entries;
+    let served: Served = Arc::default();
+    let log = served.clone();
+    s.plugin_store.fetch = Some(Box::new(move |url: &str, _max: usize| {
+        let (tx, rx) = mpsc::channel();
+        log.lock().unwrap().push((url.to_string(), tx));
+        Ok(rx)
+    }));
+    (s, served)
+}
+
+fn answer(served: &Served, result: FetchResult) {
+    let (_, tx) = served.lock().unwrap().remove(0);
+    tx.send(result).unwrap();
+}
+
+fn listing(s: &mut Session, id: &str) -> Value {
+    let v = s.execute("plugin.store.list", json!({})).unwrap();
+    v["plugins"].as_array().unwrap().iter().find(|p| p["id"] == id).cloned().unwrap()
+}
+
+#[test]
+fn the_bundled_catalog_parses_and_every_listing_is_valid() {
+    let raw: Catalog = serde_json::from_str(include_str!("catalog.json")).unwrap();
+    assert!(raw.plugins.len() >= 40, "{} listings", raw.plugins.len());
+    for e in &raw.plugins {
+        check_entry(e).unwrap_or_else(|why| panic!("{}: {why}", e.id));
+        assert!(photocraft_plugins::Manifest::parse(format!(r#"{{"id":"{}","name":"x","kind":"filter"}}"#, e.id).as_bytes()).is_ok(), "{}", e.id);
+    }
+    assert_eq!(bundled().len(), raw.plugins.len());
+    let mut ids: Vec<&str> = raw.plugins.iter().map(|e| e.id.as_str()).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), raw.plugins.len(), "ids are unique");
+}
+
+#[test]
+fn listings_with_bad_urls_or_checksums_are_refused() {
+    let good = entry("org.test.store.check", "1", b"abc");
+    assert!(check_entry(&good).is_ok());
+    for (url, sha) in [
+        ("http://raw.githubusercontent.com/x.wasm", good.sha256.as_str()),
+        ("https://evil.example/x.wasm", good.sha256.as_str()),
+        ("https://github.com.evil.example/x.wasm", good.sha256.as_str()),
+        (good.url.as_str(), "zz"),
+    ] {
+        let e = Entry { url: url.into(), sha256: sha.into(), ..good.clone() };
+        assert!(check_entry(&e).is_err(), "{url} {sha}");
+    }
+    assert!(check_entry(&Entry { size: 0, ..good.clone() }).is_err());
+    assert!(check_entry(&Entry { size: usize::MAX, ..good }).is_err());
+}
+
+#[test]
+fn install_downloads_verifies_and_registers_then_uninstall_removes() {
+    let id = "org.test.store.flow";
+    let bytes = module(id, "1.0.0");
+    let (mut s, served) = session(vec![entry(id, "1.0.0", &bytes)]);
+    assert_eq!(listing(&mut s, id)["installed"], false);
+
+    let r = s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    assert_eq!(r["plugins"][0]["job"]["state"], "downloading");
+    assert_eq!(served.lock().unwrap()[0].0, format!("https://raw.githubusercontent.com/example/tests/0/{id}.wasm"));
+    assert!(s.plugin_store.busy());
+    // A second request while it downloads doesn't start another.
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    assert_eq!(served.lock().unwrap().len(), 1);
+
+    answer(&served, Ok(bytes));
+    let l = listing(&mut s, id);
+    assert_eq!(l["installed"], true, "{l}");
+    assert_eq!(l["installedVersion"], "1.0.0");
+    assert!(l.get("job").is_none());
+    assert!(registry::get(id).is_some());
+    // Up to date: installing again does nothing.
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    assert!(served.lock().unwrap().is_empty());
+
+    let r = s.execute("plugin.store.uninstall", json!({"id": id})).unwrap();
+    assert_eq!(r["removed"], json!([id]));
+    assert!(registry::get(id).is_none());
+}
+
+#[test]
+fn a_tampered_download_is_refused_and_not_installed() {
+    let id = "org.test.store.tampered";
+    let bytes = module(id, "1");
+    let (mut s, served) = session(vec![entry(id, "1", &bytes)]);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    let mut evil = bytes.clone();
+    if let Some(b) = evil.last_mut() {
+        *b ^= 1;
+    }
+    answer(&served, Ok(evil));
+    let l = listing(&mut s, id);
+    assert_eq!(l["installed"], false);
+    assert_eq!(l["job"]["state"], "failed");
+    assert!(l["job"]["message"].as_str().unwrap().contains("checksum"), "{l}");
+    assert!(registry::get(id).is_none());
+}
+
+#[test]
+fn a_module_with_another_id_or_a_transport_error_fails_cleanly() {
+    let id = "org.test.store.wrongid";
+    let other = module("org.test.store.impostor", "1");
+    let (mut s, served) = session(vec![entry(id, "1", &other)]);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    answer(&served, Ok(other));
+    assert!(listing(&mut s, id)["job"]["message"].as_str().unwrap().contains("impostor"));
+    assert!(registry::get("org.test.store.impostor").is_none());
+
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    answer(&served, Err("couldn't reach raw.githubusercontent.com".into()));
+    assert_eq!(listing(&mut s, id)["job"]["message"], "couldn't reach raw.githubusercontent.com");
+
+    // A worker that goes away without answering.
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    served.lock().unwrap().clear();
+    assert!(listing(&mut s, id)["job"]["message"].as_str().unwrap().contains("stopped"));
+}
+
+#[test]
+fn a_new_catalog_version_is_offered_as_an_update() {
+    let id = "org.test.store.update";
+    let old = module(id, "1.0.0");
+    let new = module(id, "2.0.0");
+    let (mut s, served) = session(vec![entry(id, "1.0.0", &old)]);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    answer(&served, Ok(old));
+    assert_eq!(listing(&mut s, id)["updateAvailable"], false);
+    s.plugin_store.catalog = vec![entry(id, "2.0.0", &new)];
+    assert_eq!(listing(&mut s, id)["updateAvailable"], true);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    answer(&served, Ok(new));
+    assert_eq!(listing(&mut s, id)["installedVersion"], "2.0.0");
+    registry::remove(id);
+}
+
+#[test]
+fn downloads_beyond_the_limit_wait_their_turn() {
+    let entries: Vec<Entry> = (0..MAX_RUNNING + 2).map(|k| entry(&format!("org.test.store.queue{k}"), "1", &module(&format!("org.test.store.queue{k}"), "1"))).collect();
+    let ids: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();
+    let (mut s, served) = session(entries);
+    s.execute("plugin.store.install", json!({"ids": ids})).unwrap();
+    assert_eq!(served.lock().unwrap().len(), MAX_RUNNING);
+    answer(&served, Err("x".into()));
+    s.plugin_store.poll();
+    assert_eq!(served.lock().unwrap().len(), MAX_RUNNING, "a finished download makes room for a queued one");
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn installs_are_saved_to_the_folder_and_load_from_it_again() {
+    let id = "org.test.store.saved";
+    let bytes = module(id, "1");
+    let dir = tempfile::tempdir().unwrap();
+    let (mut s, served) = session(vec![entry(id, "1", &bytes)]);
+    s.plugin_store.set_dir(dir.path().to_path_buf());
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    answer(&served, Ok(bytes));
+    s.plugin_store.poll();
+    let file = dir.path().join(format!("{id}.wasm"));
+    assert!(file.is_file());
+    assert_eq!(registry::get(id).unwrap().source(), Some(file.display().to_string().as_str()));
+
+    registry::remove(id);
+    let report = Session::new().plugin_store.set_dir(dir.path().to_path_buf());
+    assert_eq!(report["loaded"], json!([id]));
+
+    s.execute("plugin.store.uninstall", json!({"id": id})).unwrap();
+    assert!(!file.exists());
+    assert!(registry::get(id).is_none());
+}
+
+#[test]
+fn bad_params_and_a_missing_transport_are_errors() {
+    let id = "org.test.store.params";
+    let (mut s, _) = session(vec![entry(id, "1", &module(id, "1"))]);
+    for (cmd, p) in [
+        ("plugin.store.install", json!({})),
+        ("plugin.store.install", json!({"id": 3})),
+        ("plugin.store.install", json!({"ids": "x"})),
+        ("plugin.store.install", json!({"ids": []})),
+        ("plugin.store.install", json!({"ids": [1]})),
+        ("plugin.store.install", json!({"id": id, "ids": [id]})),
+        ("plugin.store.install", json!({"id": "org.unknown"})),
+        ("plugin.store.uninstall", json!({"id": "org.unknown"})),
+        ("plugin.store.uninstall", json!(null)),
+        ("plugin.store.list", json!({"query": 5})),
+    ] {
+        assert!(s.execute(cmd, p.clone()).is_err(), "{cmd} {p}");
+    }
+    let mut bare = Session::new();
+    bare.plugin_store.catalog = s.plugin_store.catalog.clone();
+    assert_eq!(bare.execute("plugin.store.list", json!({})).unwrap()["available"], false);
+    let e = bare.execute("plugin.store.install", json!({"id": id})).unwrap_err().to_string();
+    assert!(e.contains("not available"), "{e}");
+}
+
+#[test]
+fn list_filters_by_query_and_installed() {
+    let (mut s, _) = session(vec![entry("org.test.store.alpha", "1", b"a"), Entry { description: "Makes halftone dots".into(), ..entry("org.test.store.beta", "1", b"b") }]);
+    let names = |v: Value| v["plugins"].as_array().unwrap().iter().map(|p| p["id"].as_str().unwrap().to_string()).collect::<Vec<_>>();
+    assert_eq!(names(s.execute("plugin.store.list", json!({"query": "HALFTONE"})).unwrap()), ["org.test.store.beta"]);
+    assert_eq!(names(s.execute("plugin.store.list", json!({"query": "alpha"})).unwrap()), ["org.test.store.alpha"]);
+    assert!(names(s.execute("plugin.store.list", json!({"installed": true})).unwrap()).is_empty());
+}

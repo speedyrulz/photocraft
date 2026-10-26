@@ -95,6 +95,7 @@ pub mod photo_cmds;
 pub mod pick_cmds;
 mod pixels;
 pub mod plugin_cmds;
+pub mod plugin_store_cmds;
 pub mod prefs;
 pub mod preset_import_cmds;
 pub mod preset_store;
@@ -512,6 +513,8 @@ pub struct Session {
     pub prefs: prefs::PrefsStore,
     /// Release checks use an injected platform transport; no network I/O in the engine.
     pub updates: updates_cmds::Updates,
+    /// Plugins › Browse Plugins…: the plug-in catalog and its downloads (injected transport).
+    pub plugin_store: plugin_store_cmds::PluginStore,
     /// Edit menu state: Fade source, custom shape library (see `edit_menu_cmds`).
     pub edit_state: edit_menu_cmds::EditState,
     /// The pattern library (Window › Patterns; see `pattern.*`).
