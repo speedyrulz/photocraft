@@ -374,11 +374,11 @@ fn uninstall(s: &mut Session, p: &Value) -> Result<Value> {
     let mut removed = Vec::new();
     for id in &ids {
         let deleted = store.delete(id).map_err(EngineError::Other)?;
+        // A queued or running download would otherwise install it again when it finishes.
+        store.jobs.remove(id);
+        store.running.retain(|(running, _)| running != id);
         if registry::remove(id) || deleted {
             removed.push(id.clone());
-        }
-        if matches!(store.jobs.get(id), Some(Job::Failed { .. })) {
-            store.jobs.remove(id);
         }
     }
     Ok(json!({"removed": removed}))

@@ -763,6 +763,8 @@ pub(crate) fn state_hash(app: &PhotocraftApp, input: Option<u64>) -> u64 {
     (app.discard.is_some(), app.camera_raw.is_some(), crate::distort_ui::modal_workspace(app)).hash(&mut h);
     serde_json::to_string(&(&ui.panels, &ui.extras, &ui.view, ui.theme, ui.tool)).unwrap_or_default().hash(&mut h);
     s.prefs().interface.language.hash(&mut h);
+    // Filter › Plug-ins lists the installed plug-ins, which a background download can change.
+    photocraft_plugins::registry::revision().hash(&mut h);
     h.finish()
 }
 
@@ -822,6 +824,16 @@ mod tests {
         let quit = l.bar.find("file.exit").unwrap();
         assert_eq!((quit.label.as_str(), quit.shortcut.as_deref()), ("Quit PhotoCraft", Some("Cmd+Q")));
         assert_eq!(l.bar.find("help.about").unwrap().label, "About PhotoCraft");
+    }
+
+    /// A plug-in installed in the background (Browse Plugins) rebuilds the menus' Filter › Plug-ins.
+    #[test]
+    fn installing_a_plug_in_changes_the_menu_state() {
+        let app = app(false);
+        let before = state_hash(&app, None);
+        let bytes = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../plugins/tests/fixtures/invert.wasm")).unwrap();
+        photocraft_plugins::registry::install_bytes(&bytes).unwrap();
+        assert_ne!(state_hash(&app, None), before);
     }
 
     #[test]

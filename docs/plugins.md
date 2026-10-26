@@ -38,7 +38,11 @@ desktop app downloads through `craft-update`'s HTTPS client; the web build has n
 |---|---|---|
 | `plugin.store.list` | `{"query": "…", "installed": bool = false}` | `{"available", "busy", "plugins": [{id, name, version, author, description, collection, repo, license, size, installed, installedVersion, updateAvailable, job?}]}`; `job` is `{"state": "queued" \| "downloading" \| "failed", "message"?}`. |
 | `plugin.store.install` | `{"id": "…"}` or `{"ids": […]}`, `"reinstall": bool = false` | Queues downloads (four at a time) and returns at once; poll `plugin.store.list`. Up-to-date plug-ins are skipped unless `reinstall`. |
-| `plugin.store.uninstall` | `{"id": "…"}` or `{"ids": […]}` | Uninstalls and deletes the saved copy. |
+| `plugin.store.uninstall` | `{"id": "…"}` or `{"ids": […]}` | Uninstalls, cancels a queued or running download, and deletes the saved copy. |
+
+The control channel and MCP refuse `plugin.store.install` and `plugin.store.uninstall`, as they do
+`plugin.reload`: they write the settings directory, outside the automation roots. `plugin.store.list`
+works, and `plugin.install {"data"}` still installs a module for the session.
 
 The catalog was assembled on 2026-10-26 from the public repositories that ship ABI v1 modules:
 [akkk09/artcraft-store](https://github.com/akkk09/artcraft-store) (12 filters),

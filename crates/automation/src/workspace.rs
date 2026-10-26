@@ -409,7 +409,8 @@ fn command_uses_ambient_path(id: &str, params: &Value) -> bool {
         "edit.keyboardShortcuts" => {
             params.get("path").is_some() || ["importKys", "exportKys", "summarize"].iter().any(|k| params.get(*k).and_then(|v| v.get("path")).is_some())
         }
-        "plugin.reload" => true,
+        // The store downloads into, and deletes from, the settings directory's Plug-ins folder.
+        "plugin.reload" | "plugin.store.install" | "plugin.store.uninstall" => true,
         _ => false,
     }
 }
@@ -857,6 +858,8 @@ mod tests {
             ("plugin.reload", serde_json::json!({"path": "/outside/plugins"})),
             ("plugin.reload", serde_json::json!({})),
             ("plugin.install", serde_json::json!({"path": " "})),
+            ("plugin.store.install", serde_json::json!({"id": "io.github.mitacore.posterize"})),
+            ("plugin.store.uninstall", serde_json::json!({"id": "io.github.mitacore.posterize"})),
             ("swatches.import", serde_json::json!({"path": "/outside/set.aco"})),
             ("swatches.export", serde_json::json!({"path": "/outside/set.ase"})),
             ("actions.load", serde_json::json!({"path": "/outside/set.atn"})),
@@ -874,6 +877,7 @@ mod tests {
             ("brush.presets.importImage", serde_json::json!({"data": "QUJD"})),
             ("gradient.presets.importGrd", serde_json::json!({"data": "QUJD"})),
             ("plugin.install", serde_json::json!({"data": "QUJD"})),
+            ("plugin.store.list", serde_json::json!({})),
             ("swatches.import", serde_json::json!({"data": "QUJD"})),
             ("swatches.export", serde_json::json!({"format": "ase"})),
             ("actions.load", serde_json::json!({"data": "QUJD"})),

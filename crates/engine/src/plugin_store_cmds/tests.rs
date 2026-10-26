@@ -162,6 +162,24 @@ fn a_module_with_another_id_or_a_transport_error_fails_cleanly() {
 }
 
 #[test]
+fn uninstall_cancels_a_download_in_flight() {
+    let id = "org.test.store.cancel";
+    let bytes = module(id, "1");
+    let (mut s, served) = session(vec![entry(id, "1", &bytes)]);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    assert!(s.plugin_store.busy());
+    s.execute("plugin.store.uninstall", json!({"id": id})).unwrap();
+    assert!(!s.plugin_store.busy());
+    // The download still arrives, but nobody is waiting for it.
+    let (_, tx) = served.lock().unwrap().remove(0);
+    let _ = tx.send(Ok(bytes));
+    let l = listing(&mut s, id);
+    assert_eq!(l["installed"], false, "{l}");
+    assert!(l.get("job").is_none());
+    assert!(registry::get(id).is_none());
+}
+
+#[test]
 fn a_new_catalog_version_is_offered_as_an_update() {
     let id = "org.test.store.update";
     let old = module(id, "1.0.0");
