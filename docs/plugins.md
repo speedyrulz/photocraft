@@ -28,7 +28,7 @@ from bytes).
 **Browse Plugins (the catalog).** **Plugins › Browse Plugins…** lists community plug-ins published on
 GitHub; **Plugins › Manage Plugins…** shows the ones installed from it. Tick several and press
 *Install Selected*, or use a row's *Install* / *Update* / *Uninstall*. The catalog is bundled
-(`crates/engine/src/plugin_store_cmds/catalog.json`) and pins each module by HTTPS URL (GitHub hosts
+(`crates/engine/src/cmd/plugin_store_cmds/catalog.json`) and pins each module by HTTPS URL (GitHub hosts
 only), size and SHA-256: a download that differs from what the catalog lists is refused, as is a
 module whose manifest id isn't the listed one. Verified modules install at once and are saved as
 `<id>.wasm` in the `Plug-ins` folder of the settings directory, which loads at every start. The
