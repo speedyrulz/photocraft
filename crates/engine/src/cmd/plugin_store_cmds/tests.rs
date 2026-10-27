@@ -200,6 +200,18 @@ fn a_cancelled_download_keeps_its_slot_until_it_answers() {
 }
 
 #[test]
+fn a_module_whose_version_isnt_the_listed_one_is_refused() {
+    let id = "org.test.store.version";
+    let bytes = module(id, "2.0.0");
+    let (mut s, served) = session(vec![entry(id, "1.0.0", &bytes)]);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    answer(&served, Ok(bytes));
+    let l = listing(&mut s, id);
+    assert_eq!(l["installed"], false, "{l}");
+    assert!(l["job"]["message"].as_str().unwrap().contains("version"), "{l}");
+}
+
+#[test]
 fn a_new_catalog_version_is_offered_as_an_update() {
     let id = "org.test.store.update";
     let old = module(id, "1.0.0");

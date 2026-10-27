@@ -293,6 +293,10 @@ pub fn verify(entry: &Entry, bytes: &[u8]) -> std::result::Result<Plugin, String
     if plugin.id() != entry.id {
         return Err(format!("the module calls itself {:?}, not {:?}", plugin.id(), entry.id));
     }
+    // Otherwise it would install and then be offered as an update to itself, again and again.
+    if plugin.manifest().version != entry.version {
+        return Err(format!("the module is version {:?}, the catalog says {:?}", plugin.manifest().version, entry.version));
+    }
     Ok(plugin)
 }
 

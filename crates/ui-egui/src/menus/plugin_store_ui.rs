@@ -147,7 +147,10 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                         let mut ticked = view.selected.contains(&e.id);
                         let can_tick = available && matches!(state, State::NotInstalled | State::Update);
                         ui.add_enabled_ui(can_tick, |ui| {
-                            if crate::widgets::checkbox(ui, &mut ticked, "").changed() {
+                            let r = crate::widgets::checkbox(ui, &mut ticked, "");
+                            // The name is drawn beside the box, not as its label: give the box it too.
+                            r.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, can_tick, ticked, &e.name));
+                            if r.changed() {
                                 if ticked {
                                     view.selected.insert(e.id.clone());
                                 } else {
@@ -156,7 +159,9 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                             }
                         });
                         ui.vertical(|ui| {
-                            ui.set_width((ui.available_width() - 110.0).max(160.0));
+                            // Room for the row's buttons: an outdated plug-in has Update and Uninstall.
+                            let buttons = if *state == State::Update { 196.0 } else { 110.0 };
+                            ui.set_width((ui.available_width() - buttons).max(160.0));
                             ui.horizontal(|ui| {
                                 ui.label(egui::RichText::new(&e.name).font(crate::theme::medium(12.5)).color(t.text));
                                 ui.label(egui::RichText::new(format!("{} · {} · {}", e.version, e.author, size_text(e.size))).color(t.text_faint));
@@ -181,6 +186,10 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                                 let clicked = ui.add_enabled_ui(available, |ui| crate::widgets::secondary_button(ui, label, 84.0).clicked()).inner;
                                 if clicked {
                                     action = Some(Action::Install(vec![e.id.clone()]));
+                                }
+                                // An outdated plug-in can still be removed when updating it fails or can't run.
+                                if *state == State::Update && crate::widgets::secondary_button(ui, tl!("Uninstall"), 84.0).clicked() {
+                                    action = Some(Action::Uninstall(e.id.clone()));
                                 }
                             }
                         });

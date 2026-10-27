@@ -76,8 +76,9 @@ fn browse_lists_the_catalog_and_install_starts_a_download() {
     let (mut app, requests) = app();
     open(&mut app, false);
     let mut h = harness(app);
-    h.get_by_label("Halftone Test");
-    h.get_by_label("Vignette Test");
+    // Each row's checkbox is named after its plug-in.
+    h.get_by_role_and_label(egui::accesskit::Role::CheckBox, "Halftone Test");
+    h.get_by_role_and_label(egui::accesskit::Role::CheckBox, "Vignette Test");
     h.get_by_label("Test Collection");
     let install = h.get_all_by_label("Install").next().unwrap();
     install.click();
@@ -103,7 +104,7 @@ fn search_filters_and_install_selected_installs_the_ticked_rows() {
     app.ui.plugin_store.query = "vignette".into();
     let mut h = harness(app);
     assert!(h.query_by_label("Halftone Test").is_none());
-    h.get_by_label("Vignette Test");
+    h.get_by_role_and_label(egui::accesskit::Role::CheckBox, "Vignette Test");
 
     h.state_mut().ui.plugin_store.query.clear();
     h.state_mut().ui.plugin_store.selected = ["org.test.ui.halftone".to_string(), "org.test.ui.vignette".to_string()].into();
@@ -124,5 +125,19 @@ fn manage_shows_only_installed_and_without_a_transport_install_is_off() {
     h.state_mut().ui.plugin_store.installed_only = false;
     h.run_steps(3);
     h.get_by_label("Downloading plug-ins is not available in this build.");
-    h.get_by_label("Nothing Installed");
+    h.get_by_role_and_label(egui::accesskit::Role::CheckBox, "Nothing Installed");
+}
+
+#[test]
+fn an_outdated_plug_in_offers_update_and_uninstall() {
+    let bytes = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../plugins/tests/fixtures/invert.wasm")).unwrap();
+    let plugin = photocraft_plugins::registry::install_bytes(&bytes).unwrap();
+    let mut listing = entry(plugin.id(), "Invert Test");
+    listing.version = format!("{}-newer", plugin.manifest().version);
+    let (mut app, _) = app();
+    app.session.plugin_store.set_catalog(vec![listing]);
+    open(&mut app, true);
+    let h = harness(app);
+    h.get_by_label("Update");
+    h.get_by_label("Uninstall");
 }
