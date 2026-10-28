@@ -320,6 +320,24 @@ fn cancel_stops_a_download_and_the_transport_is_told() {
 }
 
 #[test]
+fn reinstalling_waits_for_the_cancelled_download_to_answer() {
+    let id = "org.test.store.again";
+    let bytes = module(id, "1");
+    let (mut s, served) = session(vec![entry(id, "1", &bytes)]);
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    s.execute("plugin.store.cancel", json!({"id": id})).unwrap();
+    s.execute("plugin.store.install", json!({"id": id})).unwrap();
+    assert_eq!(served.lock().unwrap().len(), 1, "no second download while the first is out");
+    assert_eq!(s.plugin_store.job(id), Some(&Job::Queued));
+    answer(&served, Err("cancelled".into()));
+    s.plugin_store.poll();
+    assert_eq!(served.lock().unwrap().len(), 1, "the new one starts once the old one answered");
+    answer(&served, Ok(bytes));
+    assert_eq!(listing(&mut s, id)["installed"], true);
+    registry::remove(id);
+}
+
+#[test]
 fn a_queued_download_can_be_cancelled_before_it_starts() {
     let entries: Vec<Entry> = (0..MAX_RUNNING + 1).map(|k| entry(&format!("org.test.store.wait{k}"), "1", &module(&format!("org.test.store.wait{k}"), "1"))).collect();
     let ids: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();

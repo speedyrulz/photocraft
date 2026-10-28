@@ -34,7 +34,7 @@ heading (its plug-ins still install, but get no updates). The catalog is bundled
 only), size and SHA-256: a download that differs from what the catalog lists is refused, as is a
 module whose manifest id isn't the listed one. Verified modules install at once and are saved as
 `<id>.wasm` in the `Plug-ins` folder of the settings directory, which loads at every start. The
-desktop app downloads through `craft-update`'s resumable HTTPS download, into a temporary folder,
+desktop app downloads through `craft-update`'s resumable HTTPS download, into an owner-only `plugin-downloads` folder in the settings directory,
 and stops between reads when cancelled; the web build has no transport yet.
 
 | Command | Params | What it does |

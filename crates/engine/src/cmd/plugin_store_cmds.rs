@@ -260,6 +260,10 @@ impl PluginStore {
             if self.running.len() >= MAX_RUNNING {
                 break;
             }
+            // A cancelled download of the same module is still answering: two would share its file.
+            if self.running.iter().any(|r| r.id == id) {
+                continue;
+            }
             let Some(entry) = self.entry(&id).cloned() else {
                 self.jobs.insert(id, Job::Failed { message: "no longer in the catalog".into() });
                 continue;

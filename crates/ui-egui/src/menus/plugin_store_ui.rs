@@ -231,7 +231,8 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
             ui.add_space(4.0);
             // Ticks on rows that are no longer installable (installed meanwhile) don't count.
             view.selected.retain(|id| entries.iter().zip(&states).any(|(e, s)| e.id == *id && matches!(s, State::NotInstalled | State::Update)) || !entries.iter().any(|e| e.id == *id));
-            let ticked: Vec<String> = view.selected.iter().cloned().collect();
+            // Only the ticks this view shows: one made in Browse, or hidden by the search, waits.
+            let ticked: Vec<String> = view.selected.iter().filter(|id| entries.iter().any(|e| e.id == **id)).cloned().collect();
             ui.horizontal(|ui| {
                 let label = crate::i18n::fmt(tl!("Install Selected ({count})"), &[("count", &ticked.len().to_string())]);
                 let enabled = available && !ticked.is_empty();

@@ -117,6 +117,25 @@ fn search_filters_and_install_selected_installs_the_ticked_rows() {
 }
 
 #[test]
+fn install_selected_counts_only_the_ticks_the_view_shows() {
+    let (mut app, requests) = app();
+    open(&mut app, false);
+    app.ui.plugin_store.selected = ["org.test.ui.halftone".to_string()].into();
+    let mut h = harness(app);
+    h.get_by_label("Install Selected (1)");
+    // Installed shows neither test plug-in, so the tick made in Browse doesn't count there.
+    h.state_mut().ui.plugin_store.installed_only = true;
+    h.run_steps(3);
+    h.get_by_label("Install Selected (0)").click();
+    h.run_steps(3);
+    assert!(requests.lock().unwrap().is_empty());
+    // Back in Browse it still stands.
+    h.state_mut().ui.plugin_store.installed_only = false;
+    h.run_steps(3);
+    h.get_by_label("Install Selected (1)");
+}
+
+#[test]
 fn manage_shows_only_installed_and_without_a_transport_install_is_off() {
     let mut app = PhotocraftApp::new(Session::new(), Services::default());
     app.session.plugin_store.set_catalog(vec![entry("org.test.ui.none", "Nothing Installed")]);
