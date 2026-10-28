@@ -20,6 +20,7 @@ fn entry(id: &str, name: &str) -> Entry {
         collection: "Test Collection".into(),
         repo: "https://github.com/example/test-plugins".into(),
         license: "MIT".into(),
+        deprecated: None,
         url: format!("https://raw.githubusercontent.com/example/test-plugins/0/{id}.wasm"),
         sha256: "0".repeat(64),
         size: 10,
@@ -29,9 +30,9 @@ fn entry(id: &str, name: &str) -> Entry {
 fn app() -> (PhotocraftApp, Requests) {
     let requests: Requests = Arc::default();
     let log = requests.clone();
-    let fetch: photocraft_engine::plugin_store_cmds::FetchFn = Box::new(move |url: &str, _| {
+    let fetch: photocraft_engine::plugin_store_cmds::FetchFn = Box::new(move |r: photocraft_engine::plugin_store_cmds::Request| {
         let (tx, rx) = mpsc::channel();
-        log.lock().unwrap().push((url.to_string(), tx));
+        log.lock().unwrap().push((r.url, tx));
         Ok(rx)
     });
     let mut app = PhotocraftApp::new(Session::new(), Services { fetch_plugin: Some(fetch), ..Default::default() });
@@ -85,7 +86,7 @@ fn browse_lists_the_catalog_and_install_starts_a_download() {
     h.run_steps(3);
     assert_eq!(requests.lock().unwrap().len(), 1);
     assert!(requests.lock().unwrap()[0].0.ends_with("org.test.ui.halftone.wasm"));
-    h.get_by_label("Downloading…");
+    h.get_by_label("Cancel");
 
     // A failed download says why and offers Retry.
     let (_, tx) = requests.lock().unwrap().remove(0);
@@ -140,4 +141,36 @@ fn an_outdated_plug_in_offers_update_and_uninstall() {
     let h = harness(app);
     h.get_by_label("Update");
     h.get_by_label("Uninstall");
+}
+
+#[test]
+fn a_download_shows_progress_and_cancel_stops_it() {
+    let (mut app, requests) = app();
+    open(&mut app, false);
+    app.run("plugin.store.install", json!({"id": "org.test.ui.vignette"})).unwrap();
+    let mut h = harness(app);
+    assert!(h.state().session.plugin_store.progress("org.test.ui.vignette").is_some());
+    h.get_by_label("Cancel").click();
+    h.run_steps(3);
+    assert!(!h.state().session.plugin_store.busy());
+    assert!(h.query_by_label("Cancel").is_none());
+    // The row offers Install again, and the late answer installs nothing.
+    let (_, tx) = requests.lock().unwrap().remove(0);
+    let _ = tx.send(Err("cancelled".into()));
+    h.state_mut().session.plugin_store.poll();
+    h.run_steps(3);
+    assert_eq!(h.get_all_by_label("Install").count(), 2);
+}
+
+#[test]
+fn a_deprecated_collection_says_so_under_its_heading() {
+    let (mut app, _) = app();
+    let mut old = entry("org.test.ui.old", "Old Filter");
+    old.collection = "Old Collection".into();
+    old.deprecated = Some("No longer maintained.".into());
+    app.session.plugin_store.set_catalog(vec![entry("org.test.ui.halftone", "Halftone Test"), old]);
+    open(&mut app, false);
+    let h = harness(app);
+    h.get_by_label("No longer maintained.");
+    assert_eq!(h.get_all_by_label("No longer maintained.").count(), 1, "said once, under the heading");
 }

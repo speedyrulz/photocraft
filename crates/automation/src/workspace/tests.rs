@@ -445,6 +445,7 @@ fn automation_rejects_ambient_path_commands_and_preferences() {
         ("gradient.presets.importGrd", serde_json::json!({"data": "QUJD"})),
         ("plugin.install", serde_json::json!({"data": "QUJD"})),
         ("plugin.store.list", serde_json::json!({})),
+        ("plugin.store.cancel", serde_json::json!({"id": "io.github.mitacore.posterize"})),
         ("swatches.import", serde_json::json!({"data": "QUJD"})),
         ("swatches.export", serde_json::json!({"format": "ase"})),
         ("actions.load", serde_json::json!({"data": "QUJD"})),

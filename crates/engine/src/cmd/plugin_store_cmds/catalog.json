@@ -1,6 +1,6 @@
 {
  "version": 1,
- "updated": "2026-10-26",
+ "updated": "2026-10-27",
  "plugins": [
   {
    "id": "org.photocraft.community.color-toolkit",
@@ -11,6 +11,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_color_toolkit.wasm",
    "sha256": "fdac9ce5d5ca02cd5b7eec8073eceb6e6f0514d075f2e486e291733557308355",
    "size": 3000
@@ -24,6 +25,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_detail_recovery.wasm",
    "sha256": "f4ed43fd7f36f728dd36e8f242eae7c51d9478c89af8cb4ef7789e3463bef16d",
    "size": 3262
@@ -37,6 +39,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_film_emulation.wasm",
    "sha256": "6ce4158b1b07951ea4da2b8021f365f32b3f279430a80930fe29e31e1c1c55b1",
    "size": 4278
@@ -50,6 +53,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_geometry_fixer.wasm",
    "sha256": "10995731f2c500b31fba24bbefb17dce67bda2b9883d63100ab8bf399a2b9bf4",
    "size": 4114
@@ -63,6 +67,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_gradient_map.wasm",
    "sha256": "065da12df5ef8a13d08dde3d0275a457e71b64ccf2d45e885e64d7d205758be8",
    "size": 3604
@@ -76,6 +81,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_lut_studio.wasm",
    "sha256": "6d93d1272524d5e8cc9978e6ce04d6dd48d6de6793a7fbd1a0a8ad334c190fe9",
    "size": 299044
@@ -89,6 +95,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_mixer_blend.wasm",
    "sha256": "32f0e9d71f75356282e05c253cb092270cb151d3af44128a41f5ddaa11c6374f",
    "size": 3068
@@ -102,6 +109,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_mosaic_pixelate.wasm",
    "sha256": "dadb5945ca8a1050775bb1fb6b07dbdca3f36e95342d64c73517f2d4ddf59c5f",
    "size": 3525
@@ -115,6 +123,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_seamless_pattern_generator.wasm",
    "sha256": "bbafeec9027554680e877ccecbabd98868e8bc89946451d2fcf9847b0dfb9663",
    "size": 3951
@@ -128,6 +137,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_smudge_blend.wasm",
    "sha256": "9e1fa1871353536520a3ed41a135ba1f28c4710fcec62564cdd5aeded08986ad",
    "size": 3331
@@ -141,6 +151,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_vignette.wasm",
    "sha256": "d2477d3a2ef9028cc36cafb6cf681459a9e3b11b586ca35d912145423aa554ff",
    "size": 3019
@@ -154,6 +165,7 @@
    "collection": "ArtCraft Store",
    "repo": "https://github.com/akkk09/artcraft-store",
    "license": "MIT",
+   "deprecated": "The author stopped maintaining ArtCraft Store on 2026-10-17: these plug-ins still install, but get no updates.",
    "url": "https://akkk09.github.io/artcraft-store/downloads/photocraft_plugin_white_balance.wasm",
    "sha256": "7544f3848374aa1ef7a02f98cede3c44885b570894b2264933029458a4745c96",
    "size": 2589

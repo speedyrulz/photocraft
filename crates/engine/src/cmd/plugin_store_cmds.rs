@@ -10,7 +10,8 @@
 //! memory, fuel and time.
 
 use std::collections::BTreeMap;
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use photocraft_plugins::{Limits, Plugin, registry};
@@ -22,8 +23,44 @@ use crate::commands::{CommandSpec, always};
 use crate::{EngineError, Result, Session};
 
 pub type FetchResult = std::result::Result<Vec<u8>, String>;
-/// Starts downloading `url` (refusing more than `max` bytes) and returns at once.
-pub type FetchFn = Box<dyn FnMut(&str, usize) -> std::result::Result<Receiver<FetchResult>, String> + Send>;
+/// Starts a download and returns at once; the answer arrives on the receiver.
+pub type FetchFn = Box<dyn FnMut(Request) -> std::result::Result<Receiver<FetchResult>, String> + Send>;
+
+/// What the transport is asked to fetch.
+pub struct Request {
+    pub url: String,
+    /// The catalog's size: the transport refuses more.
+    pub size: usize,
+    /// The catalog's SHA-256 (the engine checks it again on arrival).
+    pub sha256: String,
+    pub progress: Arc<Progress>,
+}
+
+/// A download's progress, shared with the transport: it records the bytes it has, and stops (with
+/// any answer) once [`cancelled`](Progress::cancelled).
+#[derive(Debug, Default)]
+pub struct Progress {
+    received: AtomicU64,
+    cancel: AtomicBool,
+}
+
+impl Progress {
+    pub fn set_received(&self, bytes: u64) {
+        self.received.store(bytes, Ordering::Relaxed);
+    }
+
+    pub fn received(&self) -> u64 {
+        self.received.load(Ordering::Relaxed)
+    }
+
+    pub fn cancel(&self) {
+        self.cancel.store(true, Ordering::Relaxed);
+    }
+
+    pub fn cancelled(&self) -> bool {
+        self.cancel.load(Ordering::Relaxed)
+    }
+}
 
 /// Hosts a catalog URL may point at.
 const HOSTS: &[&str] = &["github.com", "raw.githubusercontent.com", "akkk09.github.io"];
@@ -42,6 +79,9 @@ pub struct Entry {
     pub collection: String,
     pub repo: String,
     pub license: String,
+    /// Why the listing gets no more updates, when its project was given up.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deprecated: Option<String>,
     pub url: String,
     pub sha256: String,
     pub size: usize,
@@ -97,13 +137,13 @@ pub struct PluginStore {
     running: Vec<Running>,
 }
 
-/// A download in flight. One uninstalled while it runs is `cancelled`: it keeps its slot until
-/// the transport answers (the transport can't be stopped; it has its own timeout), so uninstall
-/// and install again can't run more than [`MAX_RUNNING`] at once, and its result is dropped.
+/// A download in flight. One cancelled (or uninstalled) while it runs keeps its slot until the
+/// transport answers, which it does at its next read, so cancelling and installing again can't
+/// run more than [`MAX_RUNNING`] at once; its result is dropped.
 struct Running {
     id: String,
     rx: Receiver<FetchResult>,
-    cancelled: bool,
+    progress: Arc<Progress>,
 }
 
 impl Default for PluginStore {
@@ -154,6 +194,25 @@ impl PluginStore {
         self.jobs.get(id)
     }
 
+    /// Bytes received and expected, while `id` downloads.
+    pub fn progress(&self, id: &str) -> Option<(u64, u64)> {
+        let r = self.running.iter().find(|r| r.id == id && !r.progress.cancelled())?;
+        let total = self.entry(id).map_or(0, |e| e.size as u64);
+        Some((r.progress.received().min(total), total))
+    }
+
+    /// Stops `id`'s queued or running download. True when there was one.
+    pub fn cancel(&mut self, id: &str) -> bool {
+        let busy = matches!(self.jobs.get(id), Some(Job::Queued | Job::Downloading));
+        if busy {
+            self.jobs.remove(id);
+        }
+        for r in self.running.iter_mut().filter(|r| r.id == id) {
+            r.progress.cancel();
+        }
+        busy
+    }
+
     /// Whether a download is queued or running.
     pub fn busy(&self) -> bool {
         self.jobs.values().any(|j| matches!(j, Job::Queued | Job::Downloading))
@@ -167,7 +226,7 @@ impl PluginStore {
     pub fn poll(&mut self) -> bool {
         let mut changed = false;
         let mut k = 0;
-        while let Some(Running { id, rx, cancelled }) = self.running.get(k) {
+        while let Some(Running { id, rx, progress }) = self.running.get(k) {
             let result = match rx.try_recv() {
                 Ok(r) => r,
                 Err(TryRecvError::Empty) => {
@@ -176,7 +235,7 @@ impl PluginStore {
                 }
                 Err(TryRecvError::Disconnected) => Err("the download stopped before it finished".into()),
             };
-            let (id, cancelled) = (id.clone(), *cancelled);
+            let (id, cancelled) = (id.clone(), progress.cancelled());
             self.running.remove(k);
             if cancelled {
                 continue;
@@ -205,13 +264,15 @@ impl PluginStore {
                 self.jobs.insert(id, Job::Failed { message: "no longer in the catalog".into() });
                 continue;
             };
+            let progress = Arc::new(Progress::default());
+            let request = Request { url: entry.url.clone(), size: entry.size, sha256: entry.sha256.clone(), progress: progress.clone() };
             let started = match self.fetch.as_mut() {
-                Some(fetch) => fetch(&entry.url, entry.size),
+                Some(fetch) => fetch(request),
                 None => Err(UNAVAILABLE.into()),
             };
             match started {
                 Ok(rx) => {
-                    self.running.push(Running { id: id.clone(), rx, cancelled: false });
+                    self.running.push(Running { id: id.clone(), rx, progress });
                     self.jobs.insert(id, Job::Downloading);
                 }
                 Err(message) => {
@@ -309,12 +370,17 @@ fn describe(store: &PluginStore, e: &Entry) -> Value {
     let installed = registry::get(&e.id).map(|p| p.manifest().version.clone());
     let mut v = json!({
         "id": e.id, "name": e.name, "version": e.version, "author": e.author, "description": e.description,
-        "collection": e.collection, "repo": e.repo, "license": e.license, "size": e.size,
+        "collection": e.collection, "repo": e.repo, "license": e.license, "deprecated": e.deprecated, "size": e.size,
         "installed": installed.is_some(), "installedVersion": installed,
         "updateAvailable": installed.as_ref().is_some_and(|v| *v != e.version),
     });
     if let (Some(job), Some(o)) = (store.jobs.get(&e.id), v.as_object_mut()) {
-        o.insert("job".into(), json!(job));
+        let mut job = json!(job);
+        if let (Some((received, total)), Some(j)) = (store.progress(&e.id), job.as_object_mut()) {
+            j.insert("received".into(), json!(received));
+            j.insert("total".into(), json!(total));
+        }
+        o.insert("job".into(), job);
     }
     v
 }
@@ -391,15 +457,23 @@ fn uninstall(s: &mut Session, p: &Value) -> Result<Value> {
     for id in &ids {
         let deleted = store.delete(id).map_err(EngineError::Other)?;
         // A queued or running download would otherwise install it again when it finishes.
-        store.jobs.remove(id);
-        for r in store.running.iter_mut().filter(|r| r.id == *id) {
-            r.cancelled = true;
-        }
+        store.cancel(id);
         if registry::remove(id) || deleted {
             removed.push(id.clone());
         }
     }
     Ok(json!({"removed": removed}))
+}
+
+fn cancel(s: &mut Session, p: &Value) -> Result<Value> {
+    const CMD: &str = "plugin.store.cancel";
+    let ids = ids(CMD, p)?;
+    let store = &mut s.plugin_store;
+    if let Some(unknown) = ids.iter().find(|id| store.entry(id).is_none()) {
+        return Err(bad(CMD, format!("{unknown:?} is not in the plug-in catalog")));
+    }
+    let cancelled: Vec<&String> = ids.iter().filter(|id| store.cancel(id)).collect();
+    Ok(json!({"cancelled": cancelled}))
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -432,6 +506,16 @@ pub fn specs() -> Vec<CommandSpec> {
             params: r##"{"id":text,"ids":json}"##,
             enabled: always,
             run: uninstall,
+            journal: false,
+        },
+        CommandSpec {
+            id: "plugin.store.cancel",
+            label: "Cancel Plug-in Download",
+            menu: &[],
+            shortcut: None,
+            params: r##"{"id":text,"ids":json} (stops queued or running catalog downloads)"##,
+            enabled: always,
+            run: cancel,
             journal: false,
         },
     ]

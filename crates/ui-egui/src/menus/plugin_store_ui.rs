@@ -1,7 +1,8 @@
 //! Plugins › Browse Plugins… and Manage Plugins…: a non-modal window over the plug-in catalog
 //! (`plugin.store.*` engine commands). Browse lists every catalog plug-in by its GitHub project,
 //! with Install / Update per row and Install Selected for several at once; Manage lists the
-//! installed ones with Uninstall. Downloads run in the background and the rows follow them.
+//! installed ones with Uninstall. Downloads run in the background; their rows show a progress bar
+//! and Cancel.
 
 use std::collections::BTreeSet;
 
@@ -77,11 +78,16 @@ fn visible(app: &PhotocraftApp) -> Vec<Entry> {
 enum Action {
     Install(Vec<String>),
     Uninstall(String),
+    Cancel(String),
     Link(String),
 }
 
 fn size_text(bytes: usize) -> String {
-    if bytes < 1024 { format!("{bytes} B") } else { format!("{:.0} KB", bytes as f64 / 1024.0) }
+    match bytes {
+        0..1024 => format!("{bytes} B"),
+        1024..1_048_576 => format!("{:.0} KB", bytes as f64 / 1024.0),
+        _ => format!("{:.1} MB", bytes as f64 / 1_048_576.0),
+    }
 }
 
 pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
@@ -94,6 +100,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let available = app.session.plugin_store.available();
     let states: Vec<State> = entries.iter().map(|e| state_of(app, e)).collect();
     let jobs: Vec<Option<Job>> = entries.iter().map(|e| app.session.plugin_store.job(&e.id).cloned()).collect();
+    let progress: Vec<Option<(u64, u64)>> = entries.iter().map(|e| app.session.plugin_store.progress(&e.id)).collect();
     let title = if app.ui.plugin_store.installed_only { tl!("Manage Plugins") } else { tl!("Browse Plugins") };
     egui::Window::new(title)
         .id(egui::Id::unique("photocraft_plugin_store"))
@@ -130,7 +137,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                     ui.label(egui::RichText::new(if view.installed_only { tl!("No catalog plug-ins are installed.") } else { tl!("No plug-ins match the search.") }).color(t.text_dim));
                 }
                 let mut collection = "";
-                for ((e, state), job) in entries.iter().zip(&states).zip(&jobs) {
+                for (((e, state), job), progress) in entries.iter().zip(&states).zip(&jobs).zip(&progress) {
                     if e.collection != collection {
                         collection = &e.collection;
                         ui.add_space(8.0);
@@ -140,6 +147,9 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                                 action = Some(Action::Link(e.repo.clone()));
                             }
                         });
+                        if let Some(why) = &e.deprecated {
+                            ui.add(egui::Label::new(egui::RichText::new(why).color(t.warning)).wrap());
+                        }
                         crate::widgets::hairline(ui);
                     }
                     ui.add_space(4.0);
@@ -160,7 +170,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                         });
                         ui.vertical(|ui| {
                             // Room for the row's buttons: an outdated plug-in has Update and Uninstall.
-                            let buttons = if *state == State::Update { 196.0 } else { 110.0 };
+                            let buttons = if matches!(state, State::Update | State::Busy) { 196.0 } else { 110.0 };
                             ui.set_width((ui.available_width() - buttons).max(160.0));
                             ui.horizontal(|ui| {
                                 ui.label(egui::RichText::new(&e.name).font(crate::theme::medium(12.5)).color(t.text));
@@ -173,8 +183,18 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                         });
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| match state {
                             State::Busy => {
-                                ui.label(egui::RichText::new(tl!("Downloading…")).color(t.text_dim));
-                                ui.spinner();
+                                if crate::widgets::secondary_button(ui, tl!("Cancel"), 84.0).clicked() {
+                                    action = Some(Action::Cancel(e.id.clone()));
+                                }
+                                match progress {
+                                    Some((received, total)) if *total > 0 => {
+                                        let bar = egui::ProgressBar::new(*received as f32 / *total as f32).desired_width(96.0).show_percentage();
+                                        ui.add(bar).on_hover_text(format!("{} / {}", size_text(*received as usize), size_text(*total as usize)));
+                                    }
+                                    _ => {
+                                        ui.label(egui::RichText::new(tl!("Queued")).color(t.text_dim));
+                                    }
+                                }
                             }
                             State::Installed => {
                                 if crate::widgets::secondary_button(ui, tl!("Uninstall"), 84.0).clicked() {
@@ -230,6 +250,11 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
         }
         Some(Action::Uninstall(id)) => {
             if let Err(e) = app.run("plugin.store.uninstall", json!({"id": id})) {
+                app.ui.status = e;
+            }
+        }
+        Some(Action::Cancel(id)) => {
+            if let Err(e) = app.run("plugin.store.cancel", json!({"id": id})) {
                 app.ui.status = e;
             }
         }

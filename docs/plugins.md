@@ -27,25 +27,30 @@ from bytes).
 
 **Browse Plugins (the catalog).** **Plugins › Browse Plugins…** lists community plug-ins published on
 GitHub; **Plugins › Manage Plugins…** shows the ones installed from it. Tick several and press
-*Install Selected*, or use a row's *Install* / *Update* / *Uninstall*. The catalog is bundled
+*Install Selected*, or use a row's *Install* / *Update* / *Uninstall*. A downloading row shows a
+progress bar and *Cancel*; a collection whose author stopped maintaining it says so under its
+heading (its plug-ins still install, but get no updates). The catalog is bundled
 (`crates/engine/src/cmd/plugin_store_cmds/catalog.json`) and pins each module by HTTPS URL (GitHub hosts
 only), size and SHA-256: a download that differs from what the catalog lists is refused, as is a
 module whose manifest id isn't the listed one. Verified modules install at once and are saved as
 `<id>.wasm` in the `Plug-ins` folder of the settings directory, which loads at every start. The
-desktop app downloads through `craft-update`'s HTTPS client; the web build has no transport yet.
+desktop app downloads through `craft-update`'s resumable HTTPS download, into a temporary folder,
+and stops between reads when cancelled; the web build has no transport yet.
 
 | Command | Params | What it does |
 |---|---|---|
-| `plugin.store.list` | `{"query": "…", "installed": bool = false}` | `{"available", "busy", "plugins": [{id, name, version, author, description, collection, repo, license, size, installed, installedVersion, updateAvailable, job?}]}`; `job` is `{"state": "queued" \| "downloading" \| "failed", "message"?}`. |
+| `plugin.store.list` | `{"query": "…", "installed": bool = false}` | `{"available", "busy", "plugins": [{id, name, version, author, description, collection, repo, license, deprecated?, size, installed, installedVersion, updateAvailable, job?}]}`; `job` is `{"state": "queued" \| "downloading" \| "failed", "message"?, "received"?, "total"?}` (bytes, while downloading). |
 | `plugin.store.install` | `{"id": "…"}` or `{"ids": […]}`, `"reinstall": bool = false` | Queues downloads (four at a time) and returns at once; poll `plugin.store.list`. Up-to-date plug-ins are skipped unless `reinstall`. |
 | `plugin.store.uninstall` | `{"id": "…"}` or `{"ids": […]}` | Uninstalls, cancels a queued or running download, and deletes the saved copy. |
+| `plugin.store.cancel` | `{"id": "…"}` or `{"ids": […]}` | Stops queued or running downloads; `{"cancelled": [ids that had one]}`. |
 
 The control channel and MCP refuse `plugin.store.install` and `plugin.store.uninstall`, as they do
 `plugin.reload`: they write the settings directory, outside the automation roots. `plugin.store.list`
-works, and `plugin.install {"data"}` still installs a module for the session.
+and `plugin.store.cancel` work, and `plugin.install {"data"}` still installs a module for the session.
 
 The catalog was assembled on 2026-10-26 from the public repositories that ship ABI v1 modules:
-[akkk09/artcraft-store](https://github.com/akkk09/artcraft-store) (12 filters),
+[akkk09/artcraft-store](https://github.com/akkk09/artcraft-store) (12 filters; its author marked it
+deprecated on 2026-10-17, so its listings carry `deprecated`),
 [CHJ85/PhotoCraft-Plugins](https://github.com/CHJ85/PhotoCraft-Plugins) (33, pinned to a commit) and
 [Mitacore/photocraft-plugin-posterize](https://github.com/Mitacore/photocraft-plugin-posterize) (1),
 all MIT-licensed. PhotoCraft distributes only the links and checksums, not the modules. To add a
