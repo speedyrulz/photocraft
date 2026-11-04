@@ -843,11 +843,8 @@
 	Timeline	Tijdlijn
 	Tool Presets	Gereedschapsvoorinstellingen
 	Tools	Gereedschappen
-	About PhotoCraft	Over PhotoCraft
-	PhotoCraft Website	Website van PhotoCraft
-	PhotoCraft on GitHub	PhotoCraft op GitHub
-	ArtCraft Website	Website van ArtCraft
-	Join the ArtCraft Discord…	Deelnemen aan de ArtCraft-Discord…
+	About RulZ Photocraft	Over RulZ Photocraft
+	RulZ Photocraft on GitHub	RulZ Photocraft op GitHub
 	Report an Issue…	Probleem melden…
 	WIA Support…	WIA-ondersteuning…
 	Apply	Toepassen
@@ -902,7 +899,7 @@
 	All Caps	Alleen hoofdletters
 	All Slices	Alle segmenten
 	All User Slices	Alle gebruikerssegmenten
-	All shortcuts reset to PhotoCraft defaults.	Alle sneltoetsen zijn teruggezet naar de standaardwaarden van PhotoCraft.
+	All shortcuts reset to RulZ Photocraft defaults.	Alle sneltoetsen zijn teruggezet naar de standaardwaarden van RulZ Photocraft.
 	Alt	Alt
 	Always use pressure for opacity	Altijd druk gebruiken voor dekking
 	Always use pressure for size	Altijd druk gebruiken voor grootte
@@ -1155,8 +1152,8 @@
 	Drop an image or PSD anywhere to open it.	Sleep een afbeelding of PSD ergens naartoe om deze te openen.
 	Native file drag-and-drop is unavailable	Bestanden slepen en neerzetten is niet beschikbaar
 	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or copy the image in your file manager and paste it with {paste}.	Bestanden slepen en neerzetten wordt nog niet ondersteund onder Wayland. Gebruik Bestand › Openen, of kopieer de afbeelding in je bestandsbeheerder en plak deze met {paste}.
-	To drop files, start PhotoCraft under XWayland: `{command}`	Start PhotoCraft onder XWayland om bestanden neer te zetten: `{command}`
-	Or set Preferences › Performance › Linux display server to X11: PhotoCraft then always starts under XWayland.	Of zet Voorkeuren › Prestaties › Linux-weergaveserver op X11: PhotoCraft start dan altijd onder XWayland.
+	To drop files, start RulZ Photocraft under XWayland: `{command}`	Start RulZ Photocraft onder XWayland om bestanden neer te zetten: `{command}`
+	Or set Preferences › Performance › Linux display server to X11: RulZ Photocraft then always starts under XWayland.	Of zet Voorkeuren › Prestaties › Linux-weergaveserver op X11: RulZ Photocraft start dan altijd onder XWayland.
 	Edit › Paste	Bewerken › Plakken
 	Duplicate Layers…	Lagen dupliceren…
 	Duplicate style	Stijl dupliceren
@@ -1270,7 +1267,6 @@
 	Invert All	Alles omkeren
 	Invert has no settings.	Omkeren heeft geen instellingen.
 	Italic	Cursief
-	Join us on Discord	Doe mee op Discord
 	Justify all	Alles uitvullen
 	Justify last centered	Uitvullen, laatste regel gecentreerd
 	Justify last left	Uitvullen, laatste regel links
@@ -1406,9 +1402,9 @@
 	Perspective Warp is not active	Perspectiefvervorming is niet actief
 	Perspective Warp: draw planes along the image's perspective, then switch to Warp	Perspectiefvervorming: teken vlakken langs het perspectief van de afbeelding en schakel daarna naar Verbuigen
 	Photo Filter	Fotofilter
-	PhotoCraft	PhotoCraft
-	PhotoCraft Manages Colors	PhotoCraft beheert kleuren
-	PhotoCraft — an open-source, native image editor written in Rust.	PhotoCraft — een opensource, native afbeeldingseditor geschreven in Rust.
+	RulZ Photocraft	RulZ Photocraft
+	RulZ Photocraft Manages Colors	RulZ Photocraft beheert kleuren
+	RulZ Photocraft — an open-source, native image editor written in Rust.	RulZ Photocraft — een opensource, native afbeeldingseditor geschreven in Rust.
 	Pin Depth:	Speldiepte:
 	Pixel Length:	Pixellengte:
 	Pixels/Centimeter	Pixels/centimeter
@@ -1483,11 +1479,11 @@
 	Import Shortcuts…	Sneltoetsen importeren…
 	Load a keyboard shortcut set saved as .kys	Een als .kys opgeslagen sneltoetsenset laden
 	Imported {n} shortcuts from {file}. Click OK to keep them.	{n} sneltoetsen geïmporteerd uit {file}. Klik op OK om ze te behouden.
-	{n} commands are not in PhotoCraft.	{n} opdrachten bestaan niet in PhotoCraft.
+	{n} commands are not in RulZ Photocraft.	{n} opdrachten bestaan niet in RulZ Photocraft.
 	Keyboard shortcuts imported	Sneltoetsen geïmporteerd
 	Your keyboard shortcut set {set} is in use here: {n} shortcuts differ from the defaults. Edit › Keyboard Shortcuts shows them; Reset All to Defaults undoes this.	Je sneltoetsenset {set} wordt hier gebruikt: {n} sneltoetsen wijken af van de standaardwaarden. Bewerken › Sneltoetsen toont ze; Alles terugzetten naar standaard maakt dit ongedaan.
 	Import keyboard shortcuts?	Sneltoetsen importeren?
-	PhotoCraft found your keyboard shortcut set {set} from another image editor on this computer: {n} of its shortcuts differ from PhotoCraft's. Import it?	PhotoCraft heeft op deze computer je sneltoetsenset {set} van een andere beeldbewerker gevonden: {n} van de sneltoetsen wijken af van die van PhotoCraft. Importeren?
+	RulZ Photocraft found your keyboard shortcut set {set} from another image editor on this computer: {n} of its shortcuts differ from RulZ Photocraft's. Import it?	RulZ Photocraft heeft op deze computer je sneltoetsenset {set} van een andere beeldbewerker gevonden: {n} van de sneltoetsen wijken af van die van RulZ Photocraft. Importeren?
 	Edit › Keyboard Shortcuts › Reset All to Defaults undoes an import.	Bewerken › Sneltoetsen › Alles terugzetten naar standaard maakt een import ongedaan.
 	Don't Import	Niet importeren
 	The keyboard shortcut set was not imported: {error}	De sneltoetsenset is niet geïmporteerd: {error}
@@ -1673,7 +1669,6 @@
 	Apple Watch 45mm	Apple Watch 45 mm
 	Aqua	Aqua
 	Art & Illustration	Kunst en illustratie
-	ArtCraft	ArtCraft
 	Background Eraser Tool	Achtergrondgumgereedschap
 	Bevel & Emboss	Schuine kant en reliëf
 	Blend Mode	Overvloeimodus
@@ -1709,7 +1704,7 @@
 	Current Tool	Huidig gereedschap
 	Custom Shape Tool	Gereedschap Aangepaste vorm
 	Cyans	Cyaantinten
-	Default PhotoCraft Size	Standaardgrootte PhotoCraft
+	Default RulZ Photocraft Size	Standaardgrootte RulZ Photocraft
 	Delete Workspace	Werkruimte verwijderen
 	Diamond	Ruit
 	Dimensions:	Afmetingen:
@@ -1820,7 +1815,6 @@
 	Pen Tool	Pengereedschap
 	Convert Point Tool	Punt-converteergereedschap
 	Photo	Foto
-	PhotoCraft website	Website van PhotoCraft
 	Picas	Pica's
 	Pillow Emboss	Kussenreliëf
 	Pixel Replacement	Pixelvervanging
@@ -2150,7 +2144,7 @@
 	System Info	Systeeminformatie
 	More panels	Meer panelen
 	More documents	Meer documenten
-	These settings aren't available in PhotoCraft yet.	Deze instellingen zijn nog niet beschikbaar in PhotoCraft.
+	These settings aren't available in RulZ Photocraft yet.	Deze instellingen zijn nog niet beschikbaar in RulZ Photocraft.
 	Graphics	Grafisch
 	Reset GPU Backend	GPU-backend herstellen
 	Applies at next launch.	Wordt toegepast bij de volgende start.
@@ -2359,7 +2353,7 @@
 	Automatic uses GPU acceleration when available and falls back to CPU rendering on errors.	Automatisch gebruikt GPU-versnelling indien beschikbaar en valt bij fouten terug op CPU-rendering.
 	Switched to CPU rendering	Overgeschakeld naar CPU-rendering
 	GPU acceleration could not continue. Your documents are unchanged.	GPU-versnelling kon niet doorgaan. Je documenten zijn ongewijzigd.
-	PhotoCraft is using the CPU image compositor. The window may still use your graphics adapter.	PhotoCraft gebruikt de CPU-beeldcompositor. Het venster kan nog steeds je grafische adapter gebruiken.
+	RulZ Photocraft is using the CPU image compositor. The window may still use your graphics adapter.	RulZ Photocraft gebruikt de CPU-beeldcompositor. Het venster kan nog steeds je grafische adapter gebruiken.
 	Retry GPU requires a restart. Save your work first.	GPU opnieuw proberen vereist een herstart. Sla eerst je werk op.
 	Retry GPU tries the graphics processor again now.	GPU opnieuw proberen probeert de grafische processor nu opnieuw.
 	GPU acceleration resumed.	GPU-versnelling hervat.
@@ -2751,7 +2745,7 @@ cameraRaw	Color	Kleur
 	Restart Required	Herstart vereist
 	Restart	Opnieuw starten
 	Quit	Afsluiten
-	Quit PhotoCraft	PhotoCraft afsluiten
+	Quit RulZ Photocraft	RulZ Photocraft afsluiten
 	Close Window	Venster sluiten
 	New Window	Nieuw venster
 	Open Image	Afbeelding openen
@@ -3136,7 +3130,6 @@ cameraRaw	Color	Kleur
 	Custom Pixel Aspect Ratio	Aangepaste pixelverhouding
 	32-bit Preview Options	Voorvertoningsopties 32-bit
 	New Guide	Nieuwe hulplijn
-	Join the ArtCraft Discord	Deelnemen aan de ArtCraft-Discord
 	Report an Issue	Probleem melden
 	Load Files into Stack	Bestanden in stapel laden
 	Statistics	Statistieken
@@ -3523,7 +3516,7 @@ cameraRaw	Color	Kleur
 	Modify Date	Wijzigingsdatum
 	Mosaic	Mozaïek
 	Motion Blur	Bewegingsonscherpte
-	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run PhotoCraft under XWayland with `WAYLAND_DISPLAY= photocraft`.	Bestanden slepen en neerzetten wordt nog niet ondersteund onder Wayland. Gebruik Bestand › Openen, of start PhotoCraft onder XWayland met `WAYLAND_DISPLAY= photocraft`.
+	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run RulZ Photocraft under XWayland with `WAYLAND_DISPLAY= photocraft`.	Bestanden slepen en neerzetten wordt nog niet ondersteund onder Wayland. Gebruik Bestand › Openen, of start RulZ Photocraft onder XWayland met `WAYLAND_DISPLAY= photocraft`.
 	Neon Glow	Neongloed
 	New Guide Layout	Nieuwe hulplijnindeling
 	New Path	Nieuw pad
@@ -3881,7 +3874,7 @@ cameraData	Lens	Lens
 	There is no crop size or ratio to save	Er is geen uitsnijformaat of verhouding om op te slaan
 	Search settings…	Instellingen zoeken…
 	No matching settings	Geen overeenkomende instellingen
-	PhotoCraft — Screen Color Picker	PhotoCraft — Schermkleurkiezer
+	RulZ Photocraft — Screen Color Picker	RulZ Photocraft — Schermkleurkiezer
 	Sampling Brush Tool	Gereedschap Monsterpenseel
 	Sampling Area Overlay	Overlay van monstergebied
 	Show Sampling Area	Monstergebied tonen
@@ -4023,7 +4016,7 @@ curves	Smooth	Vloeiend maken
 	{name} (Photoshop)	{name} (Photoshop)
 	{message} ({note})	{message} ({note})
 @plural	Loaded {n} action from {file}|Loaded {n} actions from {file}	{n} handeling geladen uit {file}|{n} handelingen geladen uit {file}
-@plural	{n} step has no PhotoCraft equivalent yet|{n} steps have no PhotoCraft equivalent yet	{n} stap heeft nog geen equivalent in PhotoCraft|{n} stappen hebben nog geen equivalent in PhotoCraft
+@plural	{n} step has no RulZ Photocraft equivalent yet|{n} steps have no RulZ Photocraft equivalent yet	{n} stap heeft nog geen equivalent in RulZ Photocraft|{n} stappen hebben nog geen equivalent in RulZ Photocraft
 @plural	Saved {n} action to {file}|Saved {n} actions to {file}	{n} handeling opgeslagen in {file}|{n} handelingen opgeslagen in {file}
 @plural	{n} step with no Photoshop equivalent left out|{n} steps with no Photoshop equivalent left out	{n} stap zonder Photoshop-equivalent weggelaten|{n} stappen zonder Photoshop-equivalent weggelaten
 @plural	{n} action file loaded|{n} action files loaded	{n} handelingenbestand geladen|{n} handelingenbestanden geladen
@@ -4119,12 +4112,12 @@ curves	Smooth	Vloeiend maken
 	Bicubic Smoother	Bicubisch vloeiender
 	Bicubic Sharper	Bicubisch scherper
 	Pasting from other apps is unavailable	Plakken vanuit andere apps is niet beschikbaar
-	PhotoCraft can't reach the system clipboard in this session. On Wayland, a Flatpak sandbox hides the protocol that images from other apps are read through.	PhotoCraft heeft in deze sessie geen toegang tot het systeemklembord. Onder Wayland verbergt een Flatpak-sandbox het protocol waarmee afbeeldingen uit andere apps worden gelezen.
-	To paste from other apps, start PhotoCraft under XWayland: `{command}`	Om vanuit andere apps te plakken, start je PhotoCraft onder XWayland: `{command}`
-	Nothing to paste: PhotoCraft can't read the system clipboard here	Niets om te plakken: PhotoCraft kan het systeemklembord hier niet lezen
+	RulZ Photocraft can't reach the system clipboard in this session. On Wayland, a Flatpak sandbox hides the protocol that images from other apps are read through.	RulZ Photocraft heeft in deze sessie geen toegang tot het systeemklembord. Onder Wayland verbergt een Flatpak-sandbox het protocol waarmee afbeeldingen uit andere apps worden gelezen.
+	To paste from other apps, start RulZ Photocraft under XWayland: `{command}`	Om vanuit andere apps te plakken, start je RulZ Photocraft onder XWayland: `{command}`
+	Nothing to paste: RulZ Photocraft can't read the system clipboard here	Niets om te plakken: RulZ Photocraft kan het systeemklembord hier niet lezen
 	Delete this set	Deze set verwijderen
 	New Set…	Nieuwe set…
-	PhotoCraft Defaults	PhotoCraft-standaard
+	RulZ Photocraft Defaults	RulZ Photocraft-standaard
 	Save a list of these shortcuts as a web page	Een lijst van deze sneltoetsen als webpagina opslaan
 	Save the changes to this set	De wijzigingen in deze set opslaan
 	Save these shortcuts as a .kys file	Deze sneltoetsen als .kys-bestand opslaan

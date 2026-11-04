@@ -1,34 +1,30 @@
-# PhotoCraft app icon
+# RulZ Photocraft app icon
 
-A **nine-tailed kitsune with a brow diamond**: an engraving portrait, seated, looking back at the
-viewer, in the Crafting Apps' owl-template framing (full-bleed field, head and body filling the
-tile, tails running off the edges).
+The **RulZ "R" mark** on a near-black tile with a red border: the same tile as the RulZ AI Tools
+Suite's launcher (`tools/make_logo.py` in RulZ-AI-Tools-Suite), rendered larger.
 
 ## Palette
 
-Exactly three colours:
-
 | Colour | Hex | Used for |
 |---|---|---|
-| Ink | `#0b0b0c` | line work and contours |
-| Paper | `#efe9dc` | the figure |
-| PhotoCraft blue (app colour) | `#2f7bf5` | the full-bleed field |
+| RulZ red | `#ed000d` | the upper stroke and the border |
+| Near-white | `#f2f2f2` | the lower stroke |
+| Near-black | `#0a0a0c` | the tile |
 
 ## Geometry
 
-A 512-unit tile (`viewBox="0 0 512 512"`), rounded square with `rx=112`, no border. The macOS
+A 512-unit tile (`viewBox="0 0 512 512"`), a rounded square with a red border. The macOS
 renders pad it onto Apple's 824/1024 icon grid; the Windows and Linux renders use the whole tile,
 as the other Crafting Apps do.
 
 ## Provenance
 
-The owner's original drawing, made in ArtCraft (2880 px, engraving style, keyed to the palette),
-vectorised. License: see `LICENSE.txt`.
+The RulZ logo, owned by speedyrulz. See `LICENSE.txt`.
 
 ## Files
 
-- `photocraft.svg`: canonical master (traced at 2048 px).
-- `photocraft-small.svg`: lighter trace (traced at 1024 px); also the hicolor scalable icon.
+- `photocraft.svg`: canonical master, a 1024 px PNG of the tile in an SVG wrapper (the logo has no vector source).
+- `photocraft-small.svg`: the same at 256 px; also the hicolor scalable icon.
 - `photocraft-1024.png`: 1024 px render on the macOS grid.
 - `photocraft.icns`: macOS bundle icon (`CFBundleIconFile`).
 - `photocraft.ico`: Windows icon, 16–256 px, embedded in the `.exe` by `apps/photocraft/build.rs`.

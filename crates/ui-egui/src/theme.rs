@@ -16,6 +16,9 @@
 //! - **Pro (Light Gray)** and **Pro (Light)**: Photoshop's third and fourth interface brightness
 //!   levels (#B8B8B8 and #F0F0F0 panels) with the Pro layout (#2661).
 //!
+//! - **RulZ** (Dark and Light): the RulZ AI Tools suite's black-and-red and white-and-red palettes
+//!   (the logo's red, #ED000D) on the Pro layout. RulZ Dark is the default.
+//!
 //! Widgets read [`Tokens::get`] instead of hard-coding colours, so every theme applies everywhere.
 
 use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle, Visuals};
@@ -27,8 +30,7 @@ use std::sync::Arc;
 pub enum ThemeKind {
     /// Photoshop-style Spectrum dark: flat charcoal panels, tab strips, blue accents (darkest brightness).
     Pro,
-    /// Photoshop's default (second) interface brightness: #535353 panels, #282828 canvas (default).
-    #[default]
+    /// Photoshop's default (second) interface brightness: #535353 panels, #282828 canvas.
     ProMedium,
     /// Photoshop's third interface brightness: #B8B8B8 panels (#2661).
     ProLightGray,
@@ -52,10 +54,15 @@ pub enum ThemeKind {
     SoftDark,
     /// A low-contrast light theme: pale violet-grey surfaces, softened dark text and a periwinkle accent.
     SoftLight,
+    /// The RulZ AI Tools suite's black and red, on the Pro layout (default).
+    #[default]
+    RulzDark,
+    /// The RulZ AI Tools suite's white and red, on the Pro layout.
+    RulzLight,
 }
 
 impl ThemeKind {
-    pub const ALL: [ThemeKind; 14] = [
+    pub const ALL: [ThemeKind; 16] = [
         ThemeKind::Pro,
         ThemeKind::ProMedium,
         ThemeKind::ProLightGray,
@@ -70,6 +77,8 @@ impl ThemeKind {
         ThemeKind::BreezeDark,
         ThemeKind::SoftDark,
         ThemeKind::SoftLight,
+        ThemeKind::RulzDark,
+        ThemeKind::RulzLight,
     ];
     pub fn label(self) -> &'static str {
         match self {
@@ -87,6 +96,8 @@ impl ThemeKind {
             ThemeKind::BreezeDark => "Breeze Dark",
             ThemeKind::SoftDark => "Soft Dark",
             ThemeKind::SoftLight => "Soft Light",
+            ThemeKind::RulzDark => "RulZ Dark",
+            ThemeKind::RulzLight => "RulZ Light",
         }
     }
     /// The canonical name: `ui.set {theme}` accepts it and the Window › Theme commands are
@@ -107,11 +118,13 @@ impl ThemeKind {
             ThemeKind::BreezeDark => "breezeDark",
             ThemeKind::SoftDark => "softDark",
             ThemeKind::SoftLight => "softLight",
+            ThemeKind::RulzDark => "rulzDark",
+            ThemeKind::RulzLight => "rulzLight",
         }
     }
-    /// Photoshop-grammar layout (tab strips, flat panels): the four Pro brightness levels.
+    /// Photoshop-grammar layout (tab strips, flat panels): the four Pro brightness levels and RulZ.
     pub fn is_pro(self) -> bool {
-        matches!(self, ThemeKind::Pro | ThemeKind::ProMedium | ThemeKind::ProLightGray | ThemeKind::ProLight)
+        matches!(self, ThemeKind::Pro | ThemeKind::ProMedium | ThemeKind::ProLightGray | ThemeKind::ProLight | ThemeKind::RulzDark | ThemeKind::RulzLight)
     }
     /// Whether this theme belongs to the dark appearance family.
     pub fn is_dark(self) -> bool {
@@ -124,6 +137,7 @@ impl ThemeKind {
                 | ThemeKind::AdwaitaDark
                 | ThemeKind::BreezeDark
                 | ThemeKind::SoftDark
+                | ThemeKind::RulzDark
         )
     }
     /// Whether this theme belongs to the light appearance family.
@@ -150,6 +164,8 @@ impl ThemeKind {
             "breezedark" | "kdedark" | "plasmadark" => Some(ThemeKind::BreezeDark),
             "softdark" => Some(ThemeKind::SoftDark),
             "softlight" => Some(ThemeKind::SoftLight),
+            "rulz" | "rulzdark" => Some(ThemeKind::RulzDark),
+            "rulzlight" => Some(ThemeKind::RulzLight),
             _ => None,
         }
     }
@@ -221,6 +237,73 @@ impl Tokens {
 
     pub fn for_kind(kind: ThemeKind) -> Self {
         match kind {
+            // The RulZ AI Tools suite's dark palette (its styles.css), on the Pro layout. Dim and
+            // faint text are the suite's --body and --muted, which hold 4.5:1 on every surface.
+            ThemeKind::RulzDark => Tokens {
+                kind,
+                chrome: Color32::from_rgb(0x14, 0x14, 0x17),
+                canvas: Color32::from_rgb(0x05, 0x05, 0x05),
+                canvas_dot: Color32::from_rgb(0x05, 0x05, 0x05),
+                dock: Color32::from_rgb(0x0c, 0x0c, 0x0e),
+                card: Color32::from_rgb(0x14, 0x14, 0x17),
+                card_border: Color32::from_rgb(0x23, 0x23, 0x28),
+                field: Color32::from_rgb(0x18, 0x18, 0x1c),
+                field_border: Color32::from_rgb(0x34, 0x34, 0x3b),
+                hover: Color32::from_rgb(0x1c, 0x1c, 0x21),
+                pressed: Color32::from_rgb(0x34, 0x34, 0x3b),
+                text: Color32::from_rgb(0xf2, 0xf2, 0xf3),
+                text_dim: Color32::from_rgb(0xd4, 0xd4, 0xd8),
+                text_faint: Color32::from_rgb(0xa3, 0xa3, 0xab),
+                icon: Color32::from_rgb(0xd4, 0xd4, 0xd8),
+                accent: Color32::from_rgb(0xed, 0x00, 0x0d),
+                accent_soft: Color32::from_rgb(0x3a, 0x0c, 0x10),
+                accent_border: Color32::from_rgba_unmultiplied(0xed, 0x00, 0x0d, 170),
+                accent_text: Color32::from_rgb(0xff, 0x6b, 0x72),
+                separator: Color32::from_rgb(0x23, 0x23, 0x28),
+                primary_bg: Color32::from_rgb(0xed, 0x00, 0x0d),
+                primary_text: Color32::WHITE,
+                danger: Color32::from_rgb(0xff, 0x5a, 0x5f),
+                warning: Color32::from_rgb(0xfb, 0xbf, 0x24),
+                tab_strip: Color32::from_rgb(0x0c, 0x0c, 0x0e),
+                row_selected: Color32::from_rgb(0x3a, 0x0c, 0x10),
+                histogram_bg: Color32::from_rgb(0x0a, 0x0a, 0x0c),
+                caption_close: Color32::from_rgb(0xed, 0x00, 0x0d),
+                caption_close_text: Color32::WHITE,
+                ..Tokens::for_kind(ThemeKind::Pro)
+            },
+            // The suite's light palette: white surfaces and the same red.
+            ThemeKind::RulzLight => Tokens {
+                kind,
+                chrome: Color32::from_rgb(0xf5, 0xf5, 0xf7),
+                canvas: Color32::from_rgb(0xec, 0xec, 0xef),
+                canvas_dot: Color32::from_rgb(0xec, 0xec, 0xef),
+                dock: Color32::from_rgb(0xeb, 0xeb, 0xef),
+                card: Color32::from_rgb(0xf5, 0xf5, 0xf7),
+                card_border: Color32::from_rgb(0xd9, 0xd9, 0xde),
+                field: Color32::WHITE,
+                field_border: Color32::from_rgb(0xc4, 0xc4, 0xcb),
+                hover: Color32::from_rgb(0xe2, 0xe2, 0xe7),
+                pressed: Color32::from_rgb(0xd9, 0xd9, 0xde),
+                text: Color32::from_rgb(0x11, 0x11, 0x14),
+                text_dim: Color32::from_rgb(0x2a, 0x2a, 0x30),
+                text_faint: Color32::from_rgb(0x5f, 0x60, 0x68),
+                icon: Color32::from_rgb(0x2a, 0x2a, 0x30),
+                accent: Color32::from_rgb(0xed, 0x00, 0x0d),
+                accent_soft: Color32::from_rgb(0xfd, 0xe6, 0xe7),
+                accent_border: Color32::from_rgba_unmultiplied(0xed, 0x00, 0x0d, 170),
+                accent_text: Color32::from_rgb(0xc8, 0x00, 0x0b),
+                separator: Color32::from_rgb(0xd9, 0xd9, 0xde),
+                primary_bg: Color32::from_rgb(0xed, 0x00, 0x0d),
+                primary_text: Color32::WHITE,
+                danger: Color32::from_rgb(0xb4, 0x00, 0x0a),
+                warning: Color32::from_rgb(0x8a, 0x53, 0x00),
+                tab_strip: Color32::from_rgb(0xeb, 0xeb, 0xef),
+                row_selected: Color32::from_rgb(0xfd, 0xe6, 0xe7),
+                histogram_bg: Color32::from_rgb(0xf5, 0xf5, 0xf7),
+                caption_close: Color32::from_rgb(0xed, 0x00, 0x0d),
+                caption_close_text: Color32::WHITE,
+                ..Tokens::for_kind(ThemeKind::ProLight)
+            },
             // Sampled from Photoshop 2026's default brightness (raw display values).
             ThemeKind::ProMedium => Tokens {
                 kind,

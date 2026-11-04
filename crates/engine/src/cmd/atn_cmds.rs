@@ -84,7 +84,7 @@ pub const PHOTOSHOP_STEP: &str = "actions.photoshopStep";
 /// Photoshop's Insert Stop: `{"message", "allowContinue"}`.
 pub const STOP_MESSAGE: &str = "actions.stopMessage";
 /// The set name Save Actions uses for actions that came from no set.
-pub const DEFAULT_SET: &str = "PhotoCraft Actions";
+pub const DEFAULT_SET: &str = "RulZ Photocraft Actions";
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
     EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
@@ -106,7 +106,7 @@ fn stop_message(_: &mut Session, p: &Value) -> Result<Value> {
 fn photoshop_step_run(_: &mut Session, p: &Value) -> Result<Value> {
     let name = jstr(p, "name").filter(|n| !n.is_empty()).unwrap_or("this step");
     let event = jstr(p, "event").unwrap_or("?");
-    Err(EngineError::Other(format!("Photoshop step \"{name}\" ({event}) has no PhotoCraft equivalent yet; switch it off in the Actions panel to skip it")))
+    Err(EngineError::Other(format!("Photoshop step \"{name}\" ({event}) has no RulZ Photocraft equivalent yet; switch it off in the Actions panel to skip it")))
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -116,7 +116,7 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Load Actions…",
             menu: &[],
             shortcut: None,
-            params: r##"{"path":".atn file"?,"data":base64 bytes?,"set":name? (override the file's set name),"replace":bool=true (replace the actions of a set of the same name),"encoding":"auto"|label="auto" (the encoding of 8-bit step names: shift_jis, gbk, big5, euc-kr, windows-1252, macintosh…; auto works it out)} → {set, actions:[names], steps, unsupported:[{action, step, event, name}], functionKeys:[{action, key}], warnings, encoding}. Photoshop steps PhotoCraft cannot play become actions.photoshopStep steps (kept for Save Actions; they fail at playback with the step's name); tool selections and other steps with no document effect are imported switched off. Layer references by name replay in any document."##,
+            params: r##"{"path":".atn file"?,"data":base64 bytes?,"set":name? (override the file's set name),"replace":bool=true (replace the actions of a set of the same name),"encoding":"auto"|label="auto" (the encoding of 8-bit step names: shift_jis, gbk, big5, euc-kr, windows-1252, macintosh…; auto works it out)} → {set, actions:[names], steps, unsupported:[{action, step, event, name}], functionKeys:[{action, key}], warnings, encoding}. Photoshop steps RulZ Photocraft cannot play become actions.photoshopStep steps (kept for Save Actions; they fail at playback with the step's name); tool selections and other steps with no document effect are imported switched off. Layer references by name replay in any document."##,
             enabled: always,
             run: load,
             journal: false,
@@ -126,7 +126,7 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Save Actions…",
             menu: &[],
             shortcut: None,
-            params: r##"{"path":".atn file"? (else the bytes come back as base64 `data`),"set":name? (that set's actions, none for an empty New Set set; default: every action, as the set "PhotoCraft Actions"),"action":name|index? (one action),"skipUnsupported":bool=false (leave out steps with no Photoshop equivalent instead of failing)} → {set, actions:[names], steps, bytes, skipped:[{action, step, id}], path|data}"##,
+            params: r##"{"path":".atn file"? (else the bytes come back as base64 `data`),"set":name? (that set's actions, none for an empty New Set set; default: every action, as the set "RulZ Photocraft Actions"),"action":name|index? (one action),"skipUnsupported":bool=false (leave out steps with no Photoshop equivalent instead of failing)} → {set, actions:[names], steps, bytes, skipped:[{action, step, id}], path|data}"##,
             enabled: always,
             run: save,
             journal: false,
@@ -146,7 +146,7 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Photoshop Step",
             menu: &[],
             shortcut: None,
-            params: r##"{"event":id,"name":str,"descriptor":base64?} (a step from a .atn file PhotoCraft has no command for: fails at playback, written back by actions.save)"##,
+            params: r##"{"event":id,"name":str,"descriptor":base64?} (a step from a .atn file RulZ Photocraft has no command for: fails at playback, written back by actions.save)"##,
             enabled: always,
             run: photoshop_step_run,
             journal: true,

@@ -81,7 +81,7 @@ fn saved_ui_font_size_survives_first_frame_install() {
     let mut width = 0.0;
     ctx.run_ui(Default::default(), |ui| {
         assert!(medium_bound(ui.ctx()), "the installed stack reaches the second pass");
-        width = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+        width = ui.painter().layout_no_wrap("RulZ Photocraft".into(), medium(13.0), Color32::WHITE).size().x;
     })
     .textures_delta
     .clear();
@@ -91,7 +91,7 @@ fn saved_ui_font_size_survives_first_frame_install() {
     let mut scaled = 0.0;
     ctx.run_ui(Default::default(), |ui| {
         assert!(medium_bound(ui.ctx()));
-        scaled = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+        scaled = ui.painter().layout_no_wrap("RulZ Photocraft".into(), medium(13.0), Color32::WHITE).size().x;
     })
     .textures_delta
     .clear();
@@ -101,7 +101,7 @@ fn saved_ui_font_size_survives_first_frame_install() {
     for _ in 0..2 {
         ctx.run_ui(Default::default(), |ui| {
             assert!(medium_bound(ui.ctx()));
-            let w = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+            let w = ui.painter().layout_no_wrap("RulZ Photocraft".into(), medium(13.0), Color32::WHITE).size().x;
             assert!((w - scaled).abs() < 1.0, "{w} vs {scaled}");
         })
         .textures_delta
@@ -263,6 +263,30 @@ fn adwaita_themes_parse_and_meet_text_contrast() {
         assert!(contrast(t.primary_text, t.primary_bg) >= 3.0, "{kind:?}: suggested-action button label");
     }
     assert_eq!(ThemeKind::from_name("gnome dark"), Some(ThemeKind::AdwaitaDark));
+}
+
+#[test]
+fn rulz_themes_are_the_default_parse_and_hold_text_contrast() {
+    assert_eq!(ThemeKind::default(), ThemeKind::RulzDark);
+    assert_eq!(ThemeKind::from_name("rulz"), Some(ThemeKind::RulzDark));
+    for (kind, alias) in [(ThemeKind::RulzDark, "rulz dark"), (ThemeKind::RulzLight, "RulZ_Light")] {
+        assert_eq!(ThemeKind::from_name(kind.id()), Some(kind));
+        assert_eq!(ThemeKind::from_name(kind.label()), Some(kind));
+        assert_eq!(ThemeKind::from_name(alias), Some(kind));
+        assert!(ThemeKind::ALL.contains(&kind));
+        let t = Tokens::for_kind(kind);
+        assert_eq!(t.kind, kind);
+        assert_eq!(t.dark(), kind == ThemeKind::RulzDark);
+        assert!(kind.is_pro());
+        // The logo's red, in both themes.
+        assert_eq!(t.accent, Color32::from_rgb(0xed, 0x00, 0x0d));
+        assert_eq!(t.primary_bg, t.accent);
+        for surface in [t.chrome, t.dock, t.card, t.field, t.row_selected] {
+            assert!(contrast(t.text, surface) >= 4.5, "{kind:?}: text on {surface:?}");
+        }
+        assert!(contrast(t.accent_text, t.card) >= 4.5, "{kind:?}: accent text");
+        assert!(contrast(t.primary_text, t.primary_bg) >= 3.0, "{kind:?}: suggested-action button label");
+    }
 }
 
 #[test]

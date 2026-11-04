@@ -37,9 +37,9 @@
     <string>nb</string>
   </array>
   <key>CFBundleDisplayName</key>
-  <string>PhotoCraft</string>
+  <string>RulZ Photocraft</string>
   <key>CFBundleName</key>
-  <string>PhotoCraft</string>
+  <string>RulZ Photocraft</string>
   <key>CFBundleExecutable</key>
   <string>PhotoCraft</string>
   <key>CFBundleIdentifier</key>
@@ -82,7 +82,7 @@
       <key>UTTypeIdentifier</key>
       <string>ai.storyteller.photocraft.document</string>
       <key>UTTypeDescription</key>
-      <string>PhotoCraft Document</string>
+      <string>RulZ Photocraft Document</string>
       <key>UTTypeConformsTo</key>
       <array>
         <string>public.data</string>
@@ -185,7 +185,7 @@
   <array>
     <dict>
       <key>CFBundleTypeName</key>
-      <string>PhotoCraft Document</string>
+      <string>RulZ Photocraft Document</string>
       <key>CFBundleTypeRole</key>
       <string>Editor</string>
       <key>LSHandlerRank</key>

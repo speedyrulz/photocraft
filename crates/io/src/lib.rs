@@ -973,7 +973,7 @@ fn export_stages(doc: &Document, name_or_ext: &str, opts: &ExportOptions, ctl: &
     }
     if ext == "xcf" {
         return Err(IoError::Unsupported(
-            "XCF is GIMP's own format and PhotoCraft only opens it; save as .pcraft to keep the layers, or export a flat image".into(),
+            "XCF is GIMP's own format and RulZ Photocraft only opens it; save as .pcraft to keep the layers, or export a flat image".into(),
         ));
     }
     if ext == "ora" {

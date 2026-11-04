@@ -14,7 +14,11 @@
 #[cfg(not(target_arch = "wasm32"))]
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.photocraft.png")),
-    accent: Some([0x2f, 0x7b, 0xf5]),
+    accent: Some([0xed, 0x00, 0x0d]),
+    // This fork's own releases: the suite entry points at upstream, whose builds aren't this one.
+    name: "RulZ Photocraft",
+    repo: "speedyrulz/rulz-photocraft",
+    developer: "speedyrulz",
     ..craft_update::suite::PHOTOCRAFT
 };
 

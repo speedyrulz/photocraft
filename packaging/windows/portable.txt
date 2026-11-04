@@ -1,4 +1,4 @@
-PhotoCraft portable mode
+RulZ Photocraft portable mode
 
 While this file sits next to photocraft.exe, PhotoCraft keeps its preferences, brush presets,
 crash-recovery autosaves and startup state in the PhotoCraftData folder beside it, and writes

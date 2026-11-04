@@ -110,12 +110,12 @@ mod tests {
 
     #[test]
     fn windows_and_linux_icons_keep_the_round_corners() {
-        // rx=112 of 512 leaves (10, 10) of a 256 px render transparent; the old crop filled it (#4478).
+        // The rounded tile leaves (10, 10) of a 256 px render transparent; the old crop filled it (#4478).
         let png = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png");
         let icon = eframe::icon_data::from_png_bytes(png).unwrap();
         assert_eq!(icon.width, 256);
         assert_eq!(icon.rgba[(10 * 256 + 10) * 4 + 3], 0, "corner is transparent");
-        assert_eq!(icon.rgba[(128 * 256 + 2) * 4 + 3], 255, "the tile is full bleed");
+        assert_eq!(icon.rgba[(128 * 256 + 10) * 4 + 3], 255, "the tile sits just inside the edge, like the RulZ suite's launcher");
     }
 
     /// The `.ico` build.rs embeds: every size Windows asks for, each a valid PNG or BMP image.

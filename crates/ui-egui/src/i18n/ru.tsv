@@ -710,12 +710,9 @@
 	3D	3D
 	Toolbars	Панели инструментов
 	Hide All	Скрыть все
-	About PhotoCraft	О программе PhotoCraft
-	PhotoCraft Website	Сайт PhotoCraft
-	PhotoCraft on GitHub	PhotoCraft на GitHub
+	About RulZ Photocraft	О программе RulZ Photocraft
+	RulZ Photocraft on GitHub	RulZ Photocraft на GitHub
 	Report an Issue…	Сообщить о проблеме…
-	ArtCraft Website	Сайт ArtCraft
-	Join the ArtCraft Discord…	Discord сообщества ArtCraft…
 	System Info…	Информация о системе…
 	Move	Перемещение
 	Marquee	Область
@@ -789,11 +786,11 @@
 	Import Shortcuts…	Импортировать сочетания клавиш…
 	Load a keyboard shortcut set saved as .kys	Загрузить набор сочетаний клавиш, сохранённый как .kys
 	Imported {n} shortcuts from {file}. Click OK to keep them.	Импортировано сочетаний: {n} из {file}. Нажмите OK, чтобы сохранить их.
-	{n} commands are not in PhotoCraft.	Команд, которых нет в PhotoCraft: {n}.
+	{n} commands are not in RulZ Photocraft.	Команд, которых нет в RulZ Photocraft: {n}.
 	Keyboard shortcuts imported	Сочетания клавиш импортированы
 	Your keyboard shortcut set {set} is in use here: {n} shortcuts differ from the defaults. Edit › Keyboard Shortcuts shows them; Reset All to Defaults undoes this.	Здесь используется ваш набор сочетаний клавиш {set}: сочетаний, отличных от стандартных: {n}. Их показывает Редактирование › Сочетания клавиш; «Сбросить всё к значениям по умолчанию» отменяет импорт.
 	Import keyboard shortcuts?	Импортировать сочетания клавиш?
-	PhotoCraft found your keyboard shortcut set {set} from another image editor on this computer: {n} of its shortcuts differ from PhotoCraft's. Import it?	PhotoCraft нашёл на этом компьютере ваш набор сочетаний клавиш {set} из другого графического редактора: сочетаний, отличных от PhotoCraft: {n}. Импортировать его?
+	RulZ Photocraft found your keyboard shortcut set {set} from another image editor on this computer: {n} of its shortcuts differ from RulZ Photocraft's. Import it?	RulZ Photocraft нашёл на этом компьютере ваш набор сочетаний клавиш {set} из другого графического редактора: сочетаний, отличных от RulZ Photocraft: {n}. Импортировать его?
 	Edit › Keyboard Shortcuts › Reset All to Defaults undoes an import.	Редактирование › Сочетания клавиш › «Сбросить всё к значениям по умолчанию» отменяет импорт.
 	Don't Import	Не импортировать
 	The keyboard shortcut set was not imported: {error}	Набор сочетаний клавиш не импортирован: {error}
@@ -1083,7 +1080,7 @@
 	Embed Color Profile	Встроить цветовой профиль
 	Assign Profile…	Назначить профиль…
 	Convert to Profile…	Преобразовать в профиль…
-	PhotoCraft Manages Colors	PhotoCraft управляет цветами
+	RulZ Photocraft Manages Colors	RulZ Photocraft управляет цветами
 	Printer Manages Colors	Принтер управляет цветами
 	(print to the printer)	(печать на принтере)
 	Absolute Colorimetric	Абсолютный колориметрический
@@ -1650,15 +1647,15 @@
 	Use File › Open, or paste a copied image with {paste}.	Выберите Файл › Открыть или вставьте скопированное изображение с помощью {paste}.
 	Native file drag-and-drop is unavailable	Нативное перетаскивание файлов в Wayland недоступно
 	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or copy the image in your file manager and paste it with {paste}.	Нативное перетаскивание файлов в Wayland пока не поддерживается. Откройте файл через Файл › Открыть или скопируйте изображение в файловом менеджере и вставьте его с помощью {paste}.
-	To drop files, start PhotoCraft under XWayland: `{command}`	Чтобы перетаскивать файлы, запустите PhotoCraft в XWayland: `{command}`
-	Or set Preferences › Performance › Linux display server to X11: PhotoCraft then always starts under XWayland.	Или выберите в Настройки › Производительность › Дисплейный сервер Linux значение X11: PhotoCraft будет всегда запускаться в XWayland.
+	To drop files, start RulZ Photocraft under XWayland: `{command}`	Чтобы перетаскивать файлы, запустите RulZ Photocraft в XWayland: `{command}`
+	Or set Preferences › Performance › Linux display server to X11: RulZ Photocraft then always starts under XWayland.	Или выберите в Настройки › Производительность › Дисплейный сервер Linux значение X11: RulZ Photocraft будет всегда запускаться в XWayland.
 	Edit › Paste	Редактирование › Вставить
 	Photo	Фото
 	Print	Печать
 	Art & Illustration	Искусство и иллюстрация
 	Mobile	Мобильные
 	Film & Video	Кино и видео
-	Default PhotoCraft Size	Размер PhotoCraft по умолчанию
+	Default RulZ Photocraft Size	Размер RulZ Photocraft по умолчанию
 	Clipboard	Буфер обмена
 	Photo (2 × 3 in)	Фото (2 × 3 дюйма)
 	Photo (4 × 6 in)	Фото (4 × 6 дюйма)
@@ -1807,9 +1804,6 @@
 	Preserve Transparency	Сохранить прозрачность
 	Reverse	Обратить
 	Align with layer	По слою
-	Join us on Discord	Мы в Discord
-	PhotoCraft website	Сайт PhotoCraft
-	ArtCraft	ArtCraft
 	GitHub	GitHub
 	No character style	Нет стиля символов
 	No author	Нет автора
@@ -1834,9 +1828,9 @@
 	Don't Save	Не сохранять
 	No	Нет
 	Yes	Да
-	These settings aren't available in PhotoCraft yet.	Эти параметры пока недоступны в PhotoCraft.
+	These settings aren't available in RulZ Photocraft yet.	Эти параметры пока недоступны в RulZ Photocraft.
 	Shortcut removed.	Комбинация клавиш удалена.
-	All shortcuts reset to PhotoCraft defaults.	Все комбинации клавиш сброшены к стандартным PhotoCraft.
+	All shortcuts reset to RulZ Photocraft defaults.	Все комбинации клавиш сброшены к стандартным RulZ Photocraft.
 	Add Shortcut	Добавить комбинацию
 	Delete Shortcut	Удалить комбинацию
 	Press keys…	Нажмите клавиши…
@@ -2304,8 +2298,8 @@
 	Output:	Выход:
 	Paint Overlay	Перекрытие краской
 	Pattern Size	Размер паттерна
-	PhotoCraft	PhotoCraft
-	PhotoCraft — an open-source, native image editor written in Rust.	PhotoCraft — открытый нативный графический редактор на Rust.
+	RulZ Photocraft	RulZ Photocraft
+	RulZ Photocraft — an open-source, native image editor written in Rust.	RulZ Photocraft — открытый нативный графический редактор на Rust.
 	Position and Size	Положение и размер
 	Preserve Details	Сохранять детали
 	Preserve Luminosity	Сохранять светлоту
@@ -2633,7 +2627,7 @@
 	Automatic uses GPU acceleration when available and falls back to CPU rendering on errors.	Автоматический режим использует GPU, когда он доступен, и переходит на CPU при ошибках.
 	Switched to CPU rendering	Включена отрисовка на CPU
 	GPU acceleration could not continue. Your documents are unchanged.	Ускорение GPU остановлено. Документы не изменены.
-	PhotoCraft is using the CPU image compositor. The window may still use your graphics adapter.	PhotoCraft обрабатывает изображения на CPU. Окно может продолжать использовать графический адаптер.
+	RulZ Photocraft is using the CPU image compositor. The window may still use your graphics adapter.	RulZ Photocraft обрабатывает изображения на CPU. Окно может продолжать использовать графический адаптер.
 	Retry GPU requires a restart. Save your work first.	Для повтора GPU нужен перезапуск. Сначала сохраните работу.
 	Retry GPU tries the graphics processor again now.	Повторить GPU — сразу снова попробовать графический процессор.
 	GPU acceleration resumed.	Ускорение GPU возобновлено.
@@ -2863,7 +2857,7 @@ fontWeight	Italic	Курсив
 	Color to Alpha…	Цвет в альфа-канал…
 	Transparency Threshold	Порог прозрачности
 	Opacity Threshold	Порог непрозрачности
-	PhotoCraft — Screen Color Picker	PhotoCraft — Пипетка цвета экрана
+	RulZ Photocraft — Screen Color Picker	RulZ Photocraft — Пипетка цвета экрана
 	Rasterize svg groups deeper than	Растеризовать группы SVG глубже этого уровня
 	0 turns this threshold off; SVG groups nested deeper than 100 levels are always rasterized.	0 отключает этот порог; группы SVG с вложенностью более 100 уровней всегда растрируются.
 	Rule of Thirds	Правило третей
@@ -3227,7 +3221,7 @@ curves	Smooth	Сгладить
 	{name} (Photoshop)	{name} (Photoshop)
 	{message} ({note})	{message} ({note})
 @plural	Loaded {n} action from {file}|Loaded {n} actions from {file}	Загружена {n} операция из {file}|Загружены {n} операции из {file}|Загружено {n} операций из {file}
-@plural	{n} step has no PhotoCraft equivalent yet|{n} steps have no PhotoCraft equivalent yet	{n} шаг пока не имеет эквивалента в PhotoCraft|{n} шага пока не имеют эквивалента в PhotoCraft|{n} шагов пока не имеют эквивалента в PhotoCraft
+@plural	{n} step has no RulZ Photocraft equivalent yet|{n} steps have no RulZ Photocraft equivalent yet	{n} шаг пока не имеет эквивалента в RulZ Photocraft|{n} шага пока не имеют эквивалента в RulZ Photocraft|{n} шагов пока не имеют эквивалента в RulZ Photocraft
 @plural	Saved {n} action to {file}|Saved {n} actions to {file}	Сохранена {n} операция в {file}|Сохранены {n} операции в {file}|Сохранено {n} операций в {file}
 @plural	{n} step with no Photoshop equivalent left out|{n} steps with no Photoshop equivalent left out	Пропущен {n} шаг без эквивалента в Photoshop|Пропущены {n} шага без эквивалента в Photoshop|Пропущено {n} шагов без эквивалента в Photoshop
 @plural	{n} action file loaded|{n} action files loaded	Загружен {n} файл операций|Загружены {n} файла операций|Загружено {n} файлов операций
@@ -3340,12 +3334,12 @@ curves	Smooth	Сгладить
 	Bicubic Smoother	Бикубическая, глаже
 	Bicubic Sharper	Бикубическая, чётче
 	Pasting from other apps is unavailable	Вставка из других приложений недоступна
-	PhotoCraft can't reach the system clipboard in this session. On Wayland, a Flatpak sandbox hides the protocol that images from other apps are read through.	В этом сеансе PhotoCraft не может получить доступ к системному буферу обмена. В Wayland песочница Flatpak скрывает протокол, через который читаются изображения из других приложений.
-	To paste from other apps, start PhotoCraft under XWayland: `{command}`	Чтобы вставлять из других приложений, запустите PhotoCraft под XWayland: `{command}`
-	Nothing to paste: PhotoCraft can't read the system clipboard here	Нечего вставить: здесь PhotoCraft не может прочитать системный буфер обмена
+	RulZ Photocraft can't reach the system clipboard in this session. On Wayland, a Flatpak sandbox hides the protocol that images from other apps are read through.	В этом сеансе RulZ Photocraft не может получить доступ к системному буферу обмена. В Wayland песочница Flatpak скрывает протокол, через который читаются изображения из других приложений.
+	To paste from other apps, start RulZ Photocraft under XWayland: `{command}`	Чтобы вставлять из других приложений, запустите RulZ Photocraft под XWayland: `{command}`
+	Nothing to paste: RulZ Photocraft can't read the system clipboard here	Нечего вставить: здесь RulZ Photocraft не может прочитать системный буфер обмена
 	Delete this set	Удалить этот набор
 	New Set…	Новый набор…
-	PhotoCraft Defaults	Стандартные PhotoCraft
+	RulZ Photocraft Defaults	Стандартные RulZ Photocraft
 	Save a list of these shortcuts as a web page	Сохранить список этих комбинаций как веб-страницу
 	Save the changes to this set	Сохранить изменения в этом наборе
 	Save these shortcuts as a .kys file	Сохранить эти комбинации как файл .kys
@@ -3966,8 +3960,6 @@ smartSvg	AI/PDF/EPS contents will be edited as SVG. Saving replaces the embedded
 	Iris Blur	Диафрагменное размытие
 	Ivy	Плющ
 	Jag	Зубчатость
-	Join the ArtCraft Discord	Discord сообщества ArtCraft
-	Join the ArtCraft Discord ({url})	Присоединиться к Discord ArtCraft ({url})
 	Keeps the current texture when switching presets.	Сохраняет текущую текстуру при смене набора.
 	Kernel	Ядро
 	Kerning: Metrics, Optical or a value in 1/1000 em (Alt+←/→ at the caret)	Кернинг: метрический, оптический или значение в 1/1000 em (Alt+←/→ у курсора)
@@ -4093,7 +4085,7 @@ smartSvg	AI/PDF/EPS contents will be edited as SVG. Saving replaces the embedded
 	Multiple Flames Path Directions	Несколько языков пламени по направлениям контура
 	Multiple Flames Various Length	Несколько языков пламени разной длины
 	My Brushes	Мои кисти
-	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run PhotoCraft under XWayland with `WAYLAND_DISPLAY= photocraft`.	Перетаскивание файлов ещё не поддерживается в Wayland. Используйте «Файл › Открыть» или запустите PhotoCraft под XWayland с `WAYLAND_DISPLAY= photocraft`.
+	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run RulZ Photocraft under XWayland with `WAYLAND_DISPLAY= photocraft`.	Перетаскивание файлов ещё не поддерживается в Wayland. Используйте «Файл › Открыть» или запустите RulZ Photocraft под XWayland с `WAYLAND_DISPLAY= photocraft`.
 	Nearest	Ближайший
 	Neon Glow	Неоновое свечение
 	Neutralize	Нейтрализовать
@@ -4180,7 +4172,7 @@ smartSvg	AI/PDF/EPS contents will be edited as SVG. Saving replaces the embedded
 	Pentagon	Пятиугольник
 	Percentage	Процент
 	Permission denied	Доступ запрещён
-	PhotoCraft keeps retrying; until a save succeeds, preference changes are lost when it closes.	PhotoCraft продолжает попытки; пока сохранение не удастся, изменения настроек будут потеряны при закрытии.
+	RulZ Photocraft keeps retrying; until a save succeeds, preference changes are lost when it closes.	RulZ Photocraft продолжает попытки; пока сохранение не удастся, изменения настроек будут потеряны при закрытии.
 	Photomerge	Фотослияние
 	Pick Color From Image	Выбрать цвет на изображении
 	Picture Frame	Рамка
@@ -4237,7 +4229,7 @@ smartSvg	AI/PDF/EPS contents will be edited as SVG. Saving replaces the embedded
 	Pyramids	Пирамиды
 	Quick Actions	Быстрые действия
 	Quit	Выход
-	Quit PhotoCraft	Выйти из PhotoCraft
+	Quit RulZ Photocraft	Выйти из RulZ Photocraft
 	Quit {app}	Выйти из {app}
 	R G B	R G B
 	R g b	R g b
@@ -4313,7 +4305,7 @@ smartSvg	AI/PDF/EPS contents will be edited as SVG. Saving replaces the embedded
 	Save a Copy	Сохранить копию
 	Save before closing?	Сохранить перед закрытием?
 	Save for Web (Legacy)	Сохранить для Web (устаревшее)
-	Save your work and restart PhotoCraft to retry GPU acceleration. CPU rendering remains active for this session.	Сохраните работу и перезапустите PhotoCraft, чтобы повторить попытку ускорения GPU. Отрисовка на CPU остаётся активной в этом сеансе.
+	Save your work and restart RulZ Photocraft to retry GPU acceleration. CPU rendering remains active for this session.	Сохраните работу и перезапустите RulZ Photocraft, чтобы повторить попытку ускорения GPU. Отрисовка на CPU остаётся активной в этом сеансе.
 	Saved a copy as {path}	Копия сохранена как {path}
 	Saved {path}; image assets: {n} in {dir}	Сохранено: {path}; графические ресурсы: {n} в {dir}
 	Saving…	Сохранение…

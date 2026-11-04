@@ -81,6 +81,7 @@ pub const SHELL_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("window.theme.adwaitaDark", "Adwaita", &["Window", "Theme", "Dark Theme"], None),
     ("window.theme.breezeDark", "Breeze", &["Window", "Theme", "Dark Theme"], None),
     ("window.theme.softDark", "Soft", &["Window", "Theme", "Dark Theme"], None),
+    ("window.theme.rulzDark", "RulZ", &["Window", "Theme", "Dark Theme"], None),
     ("window.theme.proLightGray", "Pro Light Gray", &["Window", "Theme", "Light Theme"], None),
     ("window.theme.proLight", "Pro Light", &["Window", "Theme", "Light Theme"], None),
     ("window.theme.studioLight", "Studio", &["Window", "Theme", "Light Theme"], None),
@@ -88,17 +89,15 @@ pub const SHELL_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("window.theme.adwaita", "Adwaita", &["Window", "Theme", "Light Theme"], None),
     ("window.theme.breezeLight", "Breeze", &["Window", "Theme", "Light Theme"], None),
     ("window.theme.softLight", "Soft", &["Window", "Theme", "Light Theme"], None),
+    ("window.theme.rulzLight", "RulZ", &["Window", "Theme", "Light Theme"], None),
     ("window.theme.system", "Sync with system", &["Window", "Theme"], None),
     ("edit.search", "Search…", &["Edit"], Some("Cmd+F")),
     ("plugins.browse", "Browse Plugins…", &["Plugins"], None),
     ("plugins.manage", "Manage Plugins…", &["Plugins"], None),
-    ("help.discord", "Join the ArtCraft Discord…", &["Help"], None),
-    ("help.website", "PhotoCraft Website", &["Help"], None),
-    ("help.artcraftWebsite", "ArtCraft Website", &["Help"], None),
-    ("help.github", "PhotoCraft on GitHub", &["Help"], None),
+    ("help.github", "RulZ Photocraft on GitHub", &["Help"], None),
     ("help.reportIssue", "Report an Issue…", &["Help"], None),
     ("help.systemInfo", "System Info…", &["Help"], None),
-    ("help.about", "About PhotoCraft", &["Help"], None),
+    ("help.about", "About RulZ Photocraft", &["Help"], None),
 ];
 
 /// The tools, in toolbar order: shortcut id (`tools.select.<tool>`), Photoshop's name for it

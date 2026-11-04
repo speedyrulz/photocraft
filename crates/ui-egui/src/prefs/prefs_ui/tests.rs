@@ -173,8 +173,8 @@ use std::sync::{Arc, Mutex};
 #[test]
 fn appearance_resolves_both_saved_themes_and_follows_system() {
     let mut interface = prefs::Interface { appearance_mode: AppearanceMode::Auto, ..prefs::Interface::default() };
-    assert_eq!(selected_theme(&interface, Some(egui::Theme::Dark)), ThemeKind::ProMedium);
-    assert_eq!(selected_theme(&interface, Some(egui::Theme::Light)), ThemeKind::ProLight);
+    assert_eq!(selected_theme(&interface, Some(egui::Theme::Dark)), ThemeKind::RulzDark);
+    assert_eq!(selected_theme(&interface, Some(egui::Theme::Light)), ThemeKind::RulzLight);
     interface.dark_theme = DarkTheme::Studio;
     interface.light_theme = LightTheme::Classic;
     assert_eq!(selected_theme(&interface, Some(egui::Theme::Dark)), ThemeKind::Studio);
@@ -190,6 +190,8 @@ fn breeze_themes_are_chosen_by_preference_and_fix_the_matching_mode() {
     let ctx = egui::Context::default();
     let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
     for (id, kind, mode) in [
+        ("rulzLight", ThemeKind::RulzLight, AppearanceMode::Light),
+        ("rulzDark", ThemeKind::RulzDark, AppearanceMode::Dark),
         ("breezeLight", ThemeKind::BreezeLight, AppearanceMode::Light),
         ("breezeDark", ThemeKind::BreezeDark, AppearanceMode::Dark),
         ("softLight", ThemeKind::SoftLight, AppearanceMode::Light),
@@ -215,7 +217,7 @@ fn auto_uses_native_system_theme_when_egui_does_not_report_one() {
     app.run("prefs.set", json!({"path": "interface.appearanceMode", "value": "auto"})).unwrap();
     let ctx = egui::Context::default();
     tick(&mut app, &ctx);
-    assert_eq!(app.ui.theme, ThemeKind::ProLight);
+    assert_eq!(app.ui.theme, ThemeKind::RulzLight);
 }
 
 #[test]
@@ -237,7 +239,7 @@ fn darken_and_lighten_interface_step_through_photoshops_brightnesses_and_stop_at
     let ctx = egui::Context::default();
     let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
     sync_appearance(&mut app, &ctx);
-    assert_eq!(app.ui.theme, ThemeKind::ProMedium, "Photoshop's default brightness");
+    assert_eq!(app.ui.theme, ThemeKind::RulzDark, "the default, which steps from Medium Gray");
     let press = |app: &mut PhotocraftApp, id: &str| crate::menus::invoke(app, &ctx, id, json!({})).unwrap();
     for expected in [ThemeKind::ProLightGray, ThemeKind::ProLight, ThemeKind::ProLight] {
         press(&mut app, "view.lightenInterface");
@@ -384,15 +386,15 @@ fn auto_appearance_replaces_a_restored_egui_dark_pin() {
     ctx.set_theme(egui::ThemePreference::Dark);
     assert_eq!(ctx.options(|o| o.theme_preference), egui::ThemePreference::Dark);
     appearance_frame(&mut app, &ctx, Some(egui::Theme::Light));
-    assert_palette(&ctx, ThemeKind::ProLight);
+    assert_palette(&ctx, ThemeKind::RulzLight);
     assert_eq!(app.session.prefs().interface.appearance_mode, AppearanceMode::Auto);
     // A restored pin must also clear when the concrete PhotoCraft palette stays the same.
     ctx.set_theme(egui::ThemePreference::Dark);
     appearance_frame(&mut app, &ctx, Some(egui::Theme::Light));
     assert_eq!(ctx.options(|o| o.theme_preference), egui::ThemePreference::System);
-    assert_palette(&ctx, ThemeKind::ProLight);
+    assert_palette(&ctx, ThemeKind::RulzLight);
     appearance_frame(&mut app, &ctx, Some(egui::Theme::Dark));
-    assert_palette(&ctx, ThemeKind::ProMedium);
+    assert_palette(&ctx, ThemeKind::RulzDark);
     assert_eq!(app.session.prefs().interface.appearance_mode, AppearanceMode::Auto);
 }
 
