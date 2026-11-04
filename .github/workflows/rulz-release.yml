@@ -17,6 +17,7 @@ on:
       - "docs/**"
       - "book/**"
       - "contributors/**"
+      - ".github/**"
   workflow_dispatch:
 
 permissions:
@@ -89,8 +90,8 @@ jobs:
         run: |
           set -euo pipefail
           cd dist/release
-          sha256sum * > SHA256SUMS.txt
-          gh release create "v$VERSION" * \
+          sha256sum -- * > SHA256SUMS.txt
+          gh release create "v$VERSION" ./* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "RulZ Photocraft v$VERSION" \

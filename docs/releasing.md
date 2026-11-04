@@ -14,7 +14,7 @@ refuses to build without code-signing certificates and needs paid macOS runners,
 its own, `.github/workflows/rulz-release.yml`:
 
 - **Every push to `main` that touches the app is a published release.** Pushes that change only
-  Markdown, `docs/`, `book/` or `contributors/` aren't. *Actions → RulZ Release → Run workflow*
+  Markdown, `docs/`, `book/`, `contributors/` or `.github/` aren't. *Actions → RulZ Release → Run workflow*
   releases by hand.
 - **Windows x64 only, unsigned.** It publishes the MSI, the portable zip, the symbols and
   `SHA256SUMS.txt`. Windows SmartScreen warns about unsigned downloads, and Smart App Control can
