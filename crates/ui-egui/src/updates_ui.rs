@@ -1,39 +1,22 @@
-//! One background check at startup and a non-modal window for release information.
+//! One background check at startup, the Install/Ignore offer of a new release, and the window that
+//! answers Help › Check for Updates.
+//!
+//! This fork's releases aren't code-signed, and `craft-update` installs only signed updates, so
+//! Install runs the `update.bat` installed beside the app (`services.install_update`) instead.
 
-use photocraft_engine::updates_cmds::Status;
+use photocraft_engine::updates_cmds::{Release, Status};
 use serde_json::Value;
 
 use crate::PhotocraftApp;
 
+#[derive(Default)]
 pub(crate) struct Runtime {
     startup_checked: bool,
     notified_version: Option<String>,
-    /// The startup prompt and the self-update behind it (desktop).
-    #[cfg(not(target_arch = "wasm32"))]
-    updater: craft_update::updater::Updater,
-}
-
-impl Default for Runtime {
-    fn default() -> Self {
-        Self {
-            startup_checked: false,
-            notified_version: None,
-            #[cfg(not(target_arch = "wasm32"))]
-            updater: craft_update::updater::Updater::new(&crate::UPDATE_APP, photocraft_engine::build_info::VERSION),
-        }
-    }
-}
-
-/// The release the engine found, as `craft-update` knows it.
-#[cfg(not(target_arch = "wasm32"))]
-fn release_of(found: &photocraft_engine::updates_cmds::Release) -> craft_update::Release {
-    craft_update::Release {
-        tag: format!("v{}", found.version),
-        version: craft_update::parse_version(&found.version),
-        name: format!("RulZ Photocraft {}", found.version),
-        html_url: found.url.clone(),
-        ..Default::default()
-    }
+    /// The check under way was asked for, so it offers even a release the user ignored.
+    requested: bool,
+    /// Why the last Install didn't start.
+    install_error: Option<String>,
 }
 
 pub(crate) fn check(app: &mut PhotocraftApp, _ctx: &egui::Context, params: Value) -> Result<Value, String> {
@@ -49,8 +32,9 @@ pub(crate) fn check(app: &mut PhotocraftApp, _ctx: &egui::Context, params: Value
     if result.is_ok() || failed_to_start {
         app.ui.updates_open = true;
         app.updates_rt.startup_checked = true;
-        // A release the user dismissed is offered again by a manual check.
+        // A release the user dismissed or ignored is offered again by a manual check.
         app.updates_rt.notified_version = None;
+        app.updates_rt.requested = true;
     }
     result
 }
@@ -62,9 +46,7 @@ pub(crate) fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
         && app.updates_rt.notified_version.as_ref() != Some(&release.version)
     {
         app.updates_rt.notified_version = Some(release.version.clone());
-        app.ui.updates_open = true;
-        #[cfg(not(target_arch = "wasm32"))]
-        app.updates_rt.updater.offer(release_of(release));
+        app.ui.updates_open = app.updates_rt.requested || release.version != app.session.prefs().general.ignored_update_version;
     }
     if app.session.updates.check.is_none() {
         return;
@@ -80,48 +62,116 @@ pub(crate) fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
     }
 }
 
+/// What the user made of the offer of a new release.
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Answer {
+    Install,
+    /// Never offer this version at launch again; a newer one is offered as usual.
+    Ignore,
+    /// Closed without choosing: the next launch asks again.
+    NotNow,
+}
+
+/// Carries out the answer. Install hands over to `services.install_update`, which waits for this
+/// app to exit, and then closes through the guarded close path. Builds without an installer (the
+/// MSI, a build from source) open the release page instead.
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+fn answer(app: &mut PhotocraftApp, ctx: &egui::Context, release: &Release, answer: Answer) {
+    match answer {
+        Answer::Install => match app.services.install_update.as_ref().map(|install| install()) {
+            None => {
+                crate::links::open(app, ctx, &release.url);
+                app.ui.updates_open = false;
+            }
+            Some(Ok(())) => {
+                app.ui.updates_open = false;
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+            Some(Err(error)) => app.updates_rt.install_error = Some(error),
+        },
+        Answer::Ignore => {
+            app.session.edit_prefs(|p| p.general.ignored_update_version = release.version.clone());
+            app.ui.updates_open = false;
+        }
+        Answer::NotNow => app.ui.updates_open = false,
+    }
+}
+
+/// The offer of a new release: Install or Ignore.
+#[cfg(not(target_arch = "wasm32"))]
+fn offer(app: &mut PhotocraftApp, ctx: &egui::Context, release: &Release) {
+    let unsaved = app.has_unsaved_work();
+    let installs = app.services.install_update.is_some();
+    let error = app.updates_rt.install_error.clone();
+    let mut chosen = None;
+    let mut notes = false;
+    let modal = egui::Modal::new(egui::Id::unique("update-offer")).show(ctx, |ui| {
+        ui.set_max_width(360.0);
+        let title = crate::i18n::fmt(tl!("RulZ Photocraft {version} is available"), &[("version", &release.version)]);
+        ui.label(egui::RichText::new(title).font(crate::theme::semibold(15.0)));
+        ui.add_space(4.0);
+        crate::widgets::hairline(ui);
+        ui.add_space(8.0);
+        ui.label(crate::i18n::fmt(tl!("You have version {version}."), &[("version", photocraft_engine::build_info::VERSION)]));
+        notes = ui.link(tl!("What's new")).clicked();
+        if installs && unsaved {
+            ui.add_space(4.0);
+            ui.label(tl!("Save your documents to install this update."));
+        }
+        if let Some(error) = &error {
+            ui.add_space(4.0);
+            ui.colored_label(ui.visuals().error_fg_color, error);
+        }
+        ui.add_space(12.0);
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.spacing_mut().item_spacing.x = 10.0;
+            let label = if installs { tl!("Install") } else { tl!("Download") };
+            let install = ui.add_enabled_ui(!(installs && unsaved), |ui| crate::widgets::primary_button(ui, label, 84.0)).inner;
+            if install.clicked() {
+                chosen = Some(Answer::Install);
+            }
+            if crate::widgets::secondary_button(ui, tl!("Ignore"), 84.0).clicked() {
+                chosen = Some(Answer::Ignore);
+            }
+        });
+    });
+    if notes {
+        crate::links::open(app, ctx, &release.url);
+    }
+    if chosen.is_none() && modal.should_close() {
+        chosen = Some(Answer::NotNow);
+    }
+    if let Some(chosen) = chosen {
+        answer(app, ctx, release, chosen);
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn show(_app: &mut PhotocraftApp, _ctx: &egui::Context) {}
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let mut download: Option<String> = None;
-    {
-        let was_open = app.updates_rt.updater.prompt_open();
-        app.updates_rt.updater.tick(ctx);
-        // The restart helper is scheduled before the app closes, so no update starts over unsaved work.
-        let clean = !app.has_unsaved_work();
-        match app.updates_rt.updater.show_if(ctx, clean) {
-            craft_update::updater::Action::None => {}
-            craft_update::updater::Action::OpenUrl(url) => download = Some(url),
-            // The guarded close path asks about unsaved work and waits for saves; the restart helper
-            // relaunches once the process exits.
-            craft_update::updater::Action::Close => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
-        }
-        if was_open && !app.updates_rt.updater.prompt_open() {
-            app.ui.updates_open = false;
-        }
-    }
-    if let Some(url) = download {
-        crate::links::open(app, ctx, &url);
-    }
-    if app.updates_rt.updater.prompt_open() {
+    if !app.ui.updates_open {
         return;
     }
-    if app.ui.updates_open {
-        let dialog = craft_update::CheckResultDialog::new(&crate::UPDATE_APP, photocraft_engine::build_info::VERSION);
-        match dialog.show(ctx, &check_status(&app.session.updates.status)) {
-            craft_update::CheckResultResponse::None => {}
-            craft_update::CheckResultResponse::Close => app.ui.updates_open = false,
-            craft_update::CheckResultResponse::CheckAgain => {
-                let _ = check(app, ctx, serde_json::json!({}));
-            }
+    if let Status::Available { release } = &app.session.updates.status {
+        let release = release.clone();
+        offer(app, ctx, &release);
+        return;
+    }
+    let dialog = craft_update::CheckResultDialog::new(&crate::UPDATE_APP, photocraft_engine::build_info::VERSION);
+    match dialog.show(ctx, &check_status(&app.session.updates.status)) {
+        craft_update::CheckResultResponse::None => {}
+        craft_update::CheckResultResponse::Close => app.ui.updates_open = false,
+        craft_update::CheckResultResponse::CheckAgain => {
+            let _ = check(app, ctx, serde_json::json!({}));
         }
     }
 }
 
 /// The engine's check state as the result dialog shows it. An available release goes to the
-/// startup prompt, so the dialog draws nothing for it.
+/// offer, so the dialog draws nothing for it.
 #[cfg(not(target_arch = "wasm32"))]
 fn check_status(status: &Status) -> craft_update::updater::Status {
     use craft_update::updater::Status as Shown;
@@ -137,7 +187,7 @@ fn check_status(status: &Status) -> craft_update::updater::Status {
 mod tests {
     use super::*;
     use crate::{Services, menus};
-    use photocraft_engine::{Session, updates_cmds::Release};
+    use photocraft_engine::Session;
     use std::sync::{Arc, Mutex, mpsc};
 
     type Sender = Arc<Mutex<Option<mpsc::Sender<photocraft_engine::updates_cmds::CheckResult>>>>;
@@ -231,13 +281,7 @@ mod tests {
         let (mut app, _, sender) = app();
         let ctx = egui::Context::default();
         at(&mut app, &ctx, 0.0);
-        sender
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .send(Ok(Some(Release { version: "99.0.0".into(), url: "https://github.com/storytold/photocraft/releases/tag/v99.0.0".into() })))
-            .unwrap();
+        sender.lock().unwrap().as_ref().unwrap().send(Ok(Some(found("99.0.0")))).unwrap();
         app.run("updates.status", serde_json::json!({})).unwrap();
         at(&mut app, &ctx, 1.0);
         assert!(app.ui.updates_open);
@@ -246,28 +290,90 @@ mod tests {
         assert!(!app.ui.updates_open);
     }
 
+    fn found(version: &str) -> Release {
+        Release { version: version.into(), url: format!("https://github.com/speedyrulz/rulz-photocraft/releases/tag/v{version}") }
+    }
+
+    /// A launch that finds `version`.
+    fn launch(app: &mut PhotocraftApp, sender: &Sender, ctx: &egui::Context, version: &str) {
+        at(app, ctx, 0.0);
+        sender.lock().unwrap().as_ref().unwrap().send(Ok(Some(found(version)))).unwrap();
+        at(app, ctx, 1.0);
+    }
+
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
-    fn startup_update_prompt_appears_and_can_be_dismissed() {
+    fn startup_offer_appears_and_renders() {
         let (mut app, _, sender) = app();
         let ctx = egui::Context::default();
-        at(&mut app, &ctx, 0.0);
-        sender
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .send(Ok(Some(Release { version: "99.0.0".into(), url: "https://github.com/storytold/photocraft/releases/tag/v99.0.0".into() })))
-            .unwrap();
-        at(&mut app, &ctx, 1.0);
-        assert!(app.updates_rt.updater.prompt_open(), "startup prompt initialized on available release");
-
-        // Rendering show() renders the prompt modal
-        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
-            show(&mut app, ui.ctx());
-        });
+        launch(&mut app, &sender, &ctx, "99.0.0");
+        assert!(app.ui.updates_open, "startup offer opens on an available release");
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| show(&mut app, ui.ctx()));
         output.textures_delta.clear();
-        assert!(app.updates_rt.updater.prompt_open());
+        assert!(app.ui.updates_open);
+    }
+
+    #[test]
+    fn install_hands_over_to_the_installer_and_closes() {
+        let (mut app, _, sender) = app();
+        let ctx = egui::Context::default();
+        let installs = Arc::new(Mutex::new(0));
+        let count = installs.clone();
+        app.services.install_update = Some(Box::new(move || {
+            *count.lock().unwrap() += 1;
+            Ok(())
+        }));
+        launch(&mut app, &sender, &ctx, "99.0.0");
+        answer(&mut app, &ctx, &found("99.0.0"), Answer::Install);
+        assert_eq!(*installs.lock().unwrap(), 1);
+        assert!(!app.ui.updates_open);
+    }
+
+    #[test]
+    fn an_install_that_fails_to_start_keeps_the_offer_and_says_why() {
+        let (mut app, _, sender) = app();
+        let ctx = egui::Context::default();
+        app.services.install_update = Some(Box::new(|| Err("update.bat is missing".into())));
+        launch(&mut app, &sender, &ctx, "99.0.0");
+        answer(&mut app, &ctx, &found("99.0.0"), Answer::Install);
+        assert!(app.ui.updates_open);
+        assert_eq!(app.updates_rt.install_error.as_deref(), Some("update.bat is missing"));
+    }
+
+    #[test]
+    fn ignored_version_stays_quiet_at_launch_until_a_newer_one_or_a_manual_check() {
+        let ctx = egui::Context::default();
+        let (mut app, _, sender) = app();
+        launch(&mut app, &sender, &ctx, "99.0.0");
+        answer(&mut app, &ctx, &found("99.0.0"), Answer::Ignore);
+        assert!(!app.ui.updates_open);
+        assert_eq!(app.session.prefs().general.ignored_update_version, "99.0.0");
+        let ignore = |p: &mut photocraft_engine::prefs::Preferences| p.general.ignored_update_version = "99.0.0".into();
+
+        let (mut next, _, sender) = self::app();
+        next.session.edit_prefs(ignore);
+        launch(&mut next, &sender, &ctx, "99.0.0");
+        assert!(!next.ui.updates_open, "the ignored version isn't offered at launch");
+
+        menus::invoke(&mut next, &ctx, "help.checkForUpdates", serde_json::json!({})).unwrap();
+        sender.lock().unwrap().as_ref().unwrap().send(Ok(Some(found("99.0.0")))).unwrap();
+        at(&mut next, &ctx, 2.0);
+        assert!(next.ui.updates_open, "Help › Check for Updates offers it again");
+
+        let (mut newer, _, sender) = self::app();
+        newer.session.edit_prefs(ignore);
+        launch(&mut newer, &sender, &ctx, "99.0.1");
+        assert!(newer.ui.updates_open, "a newer version is offered");
+    }
+
+    #[test]
+    fn closing_the_offer_without_choosing_asks_again_next_launch() {
+        let (mut app, _, sender) = app();
+        let ctx = egui::Context::default();
+        launch(&mut app, &sender, &ctx, "99.0.0");
+        answer(&mut app, &ctx, &found("99.0.0"), Answer::NotNow);
+        assert!(!app.ui.updates_open);
+        assert_eq!(app.session.prefs().general.ignored_update_version, "");
     }
 
     #[test]

@@ -231,6 +231,9 @@ pub struct General {
     pub auto_show_home_screen: bool,
     /// Desktop: check published stable releases once in the background at launch.
     pub automatically_check_updates: bool,
+    /// The release the user chose to ignore: launch doesn't offer it (a newer one, and
+    /// Help › Check for Updates, still do). Empty: none.
+    pub ignored_update_version: String,
 }
 
 impl Default for General {
@@ -248,6 +251,7 @@ impl Default for General {
             use_legacy_free_transform: false,
             auto_show_home_screen: true,
             automatically_check_updates: true,
+            ignored_update_version: String::new(),
         }
     }
 }

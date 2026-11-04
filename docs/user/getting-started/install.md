@@ -11,6 +11,17 @@ Download it from the [latest release](https://github.com/speedyrulz/rulz-photocr
 
 PhotoCraft needs Windows 10 or later. On Windows 7 and 8 the installer stops with "PhotoCraft needs Windows 10 or later."
 
+The quickest way is `install.bat`:
+
+1. Download [`install.bat`](https://github.com/speedyrulz/rulz-photocraft/raw/main/install.bat) and [`update.bat`](https://github.com/speedyrulz/rulz-photocraft/raw/main/update.bat) into the same folder.
+2. Double-click `install.bat`. It downloads the latest release, installs it for your account and adds a shortcut to your desktop. It needs no administrator rights.
+
+When a new version is out, RulZ Photocraft offers it as you start the app: choose **Install** to update and restart, or **Ignore** to skip that version. **Help › Check for Updates** still offers a version you ignored. You can also update by double-clicking `update.bat`.
+
+To uninstall, delete the desktop shortcut and the folder `%LOCALAPPDATA%\Programs\RulZ Photocraft`.
+
+These builds aren't code-signed, so Windows may warn you the first time you start them. See below for the installer and the portable version.
+
 1. Open the [latest release](https://github.com/speedyrulz/rulz-photocraft/releases/latest).
 2. Download `photocraft-<version>-windows-x64.msi`. It fits most PCs (64-bit Intel and AMD).
 3. Run the file and follow the installer.
@@ -23,7 +34,6 @@ To run without installing, download `photocraft-<version>-windows-x64-portable.z
 | Arm (Snapdragon and other Arm PCs) | `photocraft-<version>-windows-arm64.msi` | `photocraft-<version>-windows-arm64-portable.zip` |
 | 32-bit                             | `photocraft-<version>-windows-x86.msi`   | `photocraft-<version>-windows-x86-portable.zip`   |
 
-The installers and executables are code-signed.
 
 ## macOS
 

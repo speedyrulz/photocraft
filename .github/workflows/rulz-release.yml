@@ -1,0 +1,98 @@
+# This fork's releases: every change to main that touches the app becomes a published GitHub
+# release, which the app offers at launch and install.bat and update.bat download.
+#
+# This is its own workflow, not release.yml: the shared one refuses to build without code-signing
+# certificates and needs paid macOS runners. So these builds are unsigned and Windows x64 only.
+#
+# The version is never committed, so a merge from upstream can't conflict over it: a build takes
+# Cargo.toml's version when that is newer than the last release (upstream bumped it), and
+# otherwise the last release's next patch number.
+name: RulZ Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "book/**"
+      - "contributors/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One at a time, so two pushes can't claim the same version.
+concurrency:
+  group: rulz-release
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Windows x64
+    # Only here: a fork of this fork has no reason to publish releases.
+    if: github.repository == 'speedyrulz/rulz-photocraft'
+    runs-on: windows-latest
+    timeout-minutes: 180
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check out craft-fonts
+        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        with:
+          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+      - name: Check out craft-i18n
+        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: rulz-release-windows-x64
+      - name: Choose the version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          source=$(cargo xtask version | tail -n 1 | tr -d '[:space:]')
+          source=${source%%-*}
+          last=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // ""')
+          last=${last#v}
+          if [ -z "$last" ] || [ "$(printf '%s\n%s\n' "$last" "$source" | sort -V | tail -n 1)" != "$last" ]; then
+            version=$source
+          else
+            version="${last%.*}.$(( ${last##*.} + 1 ))"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version (Cargo.toml: $source, last release: ${last:-none})"
+      - name: Apply the version
+        shell: bash
+        run: cargo xtask version set "${{ steps.version.outputs.version }}"
+      - name: Install WiX
+        uses: storytold/craft-common-actions/actions/install-wix@main
+      - name: Build and package
+        shell: pwsh
+        env:
+          CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+          CRAFT_FONTS_REQUIRED: "1"
+          PHOTOCRAFT_VERSION: ${{ steps.version.outputs.version }}
+          PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
+        run: ./packaging/windows/package.ps1 -Arch x64
+      - name: Publish the release
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd dist/release
+          sha256sum * > SHA256SUMS.txt
+          gh release create "v$VERSION" * \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "RulZ Photocraft v$VERSION" \
+            --generate-notes \
+            --latest

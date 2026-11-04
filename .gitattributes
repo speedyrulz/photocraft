@@ -1,0 +1,3 @@
+# Stored exactly as written, with Windows line endings: people download these files straight from
+# GitHub, and cmd misreads labels and lines without them.
+*.bat -text

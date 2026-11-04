@@ -7,6 +7,39 @@ maintainer publishes it.
 
 User-facing names say **PhotoCraft**. Files, binaries and ids stay lowercase (`photocraft-<version>-<platform>-<arch>.<ext>`, `ai.storyteller.photocraft`).
 
+## RulZ Photocraft releases (this fork)
+
+This fork doesn't use the release process below. `release.yml` calls a shared workflow that
+refuses to build without code-signing certificates and needs paid macOS runners, so the fork has
+its own, `.github/workflows/rulz-release.yml`:
+
+- **Every push to `main` that touches the app is a published release.** Pushes that change only
+  Markdown, `docs/`, `book/` or `contributors/` aren't. *Actions → RulZ Release → Run workflow*
+  releases by hand.
+- **Windows x64 only, unsigned.** It publishes the MSI, the portable zip, the symbols and
+  `SHA256SUMS.txt`. Windows SmartScreen warns about unsigned downloads, and Smart App Control can
+  block them.
+- **The version is never committed,** so merges from upstream can't conflict over it. A build
+  applies `Cargo.toml`'s version when that is newer than the last release, otherwise the last
+  release's next patch number. Set a bigger jump with `cargo xtask version set` on `main`.
+
+**Offering and installing an update.** At launch the app offers a newer release with **Install**
+and **Ignore** (`crates/ui-egui/src/updates_ui.rs`). Ignore remembers that version
+(`general.ignoredUpdateVersion`), so launch stays quiet until a newer one; Help › Check for
+Updates still offers it. `craft-update` installs only updates signed by the running app's
+publisher, which unsigned builds can't pass, so Install runs `update.bat` beside the app instead.
+With unsaved documents Install is disabled, since the app has to close. A copy with no
+`update.bat` (the MSI, a build from source) offers **Download**, which opens the release page.
+
+**`install.bat` and `update.bat`** (repository root, and inside the portable zip) download the
+latest release from `speedyrulz/rulz-photocraft`, which is written into `install.bat` and is the
+only source; `update.bat` calls `install.bat --update`. They verify the zip against
+`SHA256SUMS.txt`, a check that the download is intact: both files come from the same release, so
+this doesn't replace a signature. The app goes to `%LOCALAPPDATA%\Programs\RulZ Photocraft`, without
+`portable.txt`, so settings stay in the normal per-user folders. Files are replaced one at a time
+and put back if any step fails. `install.bat` also adds the desktop shortcut; an update doesn't
+bring back one you deleted.
+
 ## In-app update checks
 
 The native desktop app checks the public GitHub latest-release endpoint in a background

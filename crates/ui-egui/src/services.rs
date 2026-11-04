@@ -400,6 +400,9 @@ pub type RightButtonDownFn = Box<dyn Fn() -> bool + Send + Sync>;
 
 /// Platform services injected by the app binary (file dialogs, codecs), keeping this crate free of
 /// I/O dependencies.
+/// Starts the update installer and returns; the app then closes so it can run.
+pub type InstallUpdateFn = Box<dyn Fn() -> Result<(), String> + Send>;
+
 #[derive(Default)]
 pub struct Services {
     /// Explicit interactive SVG smart-object editing; unavailable in browser and automation.
@@ -455,6 +458,9 @@ pub struct Services {
     pub alert: Option<fn()>,
     /// Starts a background check for published releases (desktop, outside Flatpak).
     pub check_updates: Option<photocraft_engine::updates_cmds::CheckFn>,
+    /// Starts the installer that replaces this app once it exits. `None` when this copy has no
+    /// `update.bat` beside it (the MSI, a build from source, other platforms).
+    pub install_update: Option<InstallUpdateFn>,
     /// Downloads plug-ins for Plugins › Browse Plugins… in the background (desktop).
     pub fetch_plugin: Option<photocraft_engine::plugin_store_cmds::FetchFn>,
     /// Where plug-ins installed from the catalog are kept between runs (desktop).
