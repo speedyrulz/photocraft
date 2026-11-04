@@ -25,6 +25,47 @@ preview when they have parameters), next to **Install Plug-in…**.
 installed at startup and whenever the preference changes (native builds only; the web build installs
 from bytes).
 
+**Browse Plugins (the catalog).** **Plugins › Browse Plugins…** lists community plug-ins published on
+GitHub; **Plugins › Manage Plugins…** shows the ones installed from it. Tick several and press
+*Install Selected*, or use a row's *Install* / *Update* / *Uninstall*. A downloading row shows a
+progress bar and *Cancel*; a collection whose author stopped maintaining it says so under its
+heading (its plug-ins still install, but get no updates). The catalog is bundled
+(`crates/engine/src/cmd/plugin_store_cmds/catalog.json`) and pins each module by HTTPS URL (GitHub hosts
+only), size and SHA-256: a download that differs from what the catalog lists is refused, as is a
+module whose manifest id isn't the listed one. Verified modules install at once and are saved as
+`<id>.wasm` in the `Plug-ins` folder of the settings directory, which loads at every start. The
+desktop app downloads through `craft-update`'s resumable HTTPS download, into an owner-only `plugin-downloads` folder in the settings directory,
+and stops between reads when cancelled; the web build has no transport yet.
+
+| Command | Params | What it does |
+|---|---|---|
+| `plugin.store.list` | `{"query": "…", "installed": bool = false}` | `{"available", "busy", "plugins": [{id, name, version, author, description, collection, repo, license, deprecated?, size, installed, installedVersion, updateAvailable, job?}]}`; `job` is `{"state": "queued" \| "downloading" \| "failed", "message"?, "received"?, "total"?}` (bytes, while downloading). |
+| `plugin.store.install` | `{"id": "…"}` or `{"ids": […]}`, `"reinstall": bool = false` | Queues downloads (four at a time) and returns at once; poll `plugin.store.list`. Up-to-date plug-ins are skipped unless `reinstall`. |
+| `plugin.store.uninstall` | `{"id": "…"}` or `{"ids": […]}` | Uninstalls, cancels a queued or running download, and deletes the saved copy. |
+| `plugin.store.cancel` | `{"id": "…"}` or `{"ids": […]}` | Stops queued or running downloads; `{"cancelled": [ids that had one]}`. |
+
+The control channel and MCP refuse `plugin.store.install` and `plugin.store.uninstall`, as they do
+`plugin.reload`: they write the settings directory, outside the automation roots. `plugin.store.list`
+and `plugin.store.cancel` work, and `plugin.install {"data"}` still installs a module for the session.
+
+The catalog was assembled on 2026-10-26 from the public repositories that ship ABI v1 modules:
+[akkk09/artcraft-store](https://github.com/akkk09/artcraft-store) (12 filters; its author marked it
+deprecated on 2026-10-17, so its listings carry `deprecated`),
+[CHJ85/PhotoCraft-Plugins](https://github.com/CHJ85/PhotoCraft-Plugins) (33, pinned to a commit) and
+[Mitacore/photocraft-plugin-posterize](https://github.com/Mitacore/photocraft-plugin-posterize) (1).
+Added on 2026-11-03: [shortcircuit486/retouchcraft](https://github.com/shortcircuit486/retouchcraft)
+(1), [smyrgeorge/film-lab](https://github.com/smyrgeorge/film-lab) (2) and
+[emircesur/doom-in-photocraft](https://github.com/emircesur/doom-in-photocraft) (1, GPL-2.0; the
+rest are MIT). PhotoCraft distributes only the links and checksums, not the modules.
+
+The bundled file is a copy of the `catalog.json` in
+[speedyrulz/photocraft-plugin-directory](https://github.com/speedyrulz/photocraft-plugin-directory),
+which also lists PhotoCraft extensions that aren't ABI v1 modules and checks every listing with
+`tools/verify --download`. To add a plug-in, add a listing there (its URL, size and `sha256sum`) and
+copy the file here. Not listed: native-code companions (`kobaltgit/photocraft-companion`'s `.pcpl`
+packages) are separate programs, not ABI v1 modules; `emilanderss0n/MoxoCraft` ships ABI v1 modules
+but has no license yet; and CHJ85's Dither Smooth ships under another author's id.
+
 Plug-ins are installed **per process**, not per document. A smart filter recorded from a plug-in
 (`{"command": "plugin.run", "params": {"id", "params"}}`) re-runs on re-render while that plug-in is
 installed; if it is missing, the filter is skipped (the cached pixels stay as they were), like other
