@@ -15,7 +15,7 @@ Update PhotoCraft. In version 0.7.0, a text layer from a Photoshop file could ju
 
 ## Fix
 
-1. Check your version with **Help › System Info…**. If it is older than 0.8.2, download the [latest release](https://github.com/storytold/photocraft/releases/latest) or update with [ArtCraft Launcher](https://getartcraft.com/docs/craft-launcher).
+1. Check your version with **Help › System Info…**. If it is older than 0.8.2, download the [latest release](https://github.com/speedyrulz/rulz-photocraft/releases/latest).
 2. Open the PSD again and click the text layer with the **Horizontal Type Tool**.
 
 If you already saved the file in 0.7.0 after the text moved, the moved text is now in the file. Go back to your original PSD if you still have it.
@@ -26,4 +26,4 @@ Clicking a PSD text layer with the Type tool starts editing it, and PhotoCraft t
 
 ## Still stuck?
 
-If text still moves in 0.8.2, keep a copy of the original with **File › Save a Copy…**, then report it in the [issue tracker](https://github.com/storytold/photocraft/issues) with the PSD (zipped) and the Photoshop version that saved it. You can also ask in [Discord](https://discord.gg/artcraft). See [Get help with a problem](get-help.md).
+If text still moves in 0.8.2, keep a copy of the original with **File › Save a Copy…**, then report it in the [issue tracker](https://github.com/speedyrulz/rulz-photocraft/issues) with the PSD (zipped) and the Photoshop version that saved it. See [Get help with a problem](get-help.md).

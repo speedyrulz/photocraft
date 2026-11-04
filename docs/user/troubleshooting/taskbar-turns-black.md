@@ -15,7 +15,7 @@ Update PhotoCraft. Version 0.7.0 on Windows 11 could turn the taskbar black or h
 ## Fix
 
 1. Check your version with **Help › System Info…**, which starts with "PhotoCraft" and the version.
-2. If it is older than 0.8.2, download the [latest release](https://github.com/storytold/photocraft/releases/latest) or update with [ArtCraft Launcher](https://getartcraft.com/docs/craft-launcher). See [Install PhotoCraft](../getting-started/install.md).
+2. If it is older than 0.8.2, download the [latest release](https://github.com/speedyrulz/rulz-photocraft/releases/latest). See [Install PhotoCraft](../getting-started/install.md).
 3. Start PhotoCraft again and maximize the window.
 
 A user who saw the black taskbar on 0.7.0 confirmed that it is gone in 0.8.2 ([issue 3864](https://github.com/storytold/photocraft/issues/3864)).
@@ -26,4 +26,4 @@ PhotoCraft draws its own title bar. When such a window was maximized, Windows si
 
 ## Still stuck?
 
-If you still see it on 0.8.2, add your Windows version and PhotoCraft version to [issue 3864](https://github.com/storytold/photocraft/issues/3864), or ask in [Discord](https://discord.gg/artcraft). As a test, you can switch on **System title bar** under **Edit › Preferences › Interface…**, click **Apply** and restart PhotoCraft; Windows then draws the title bar. See [Get help with a problem](get-help.md) for what to include.
+If you still see it on 0.8.2, report it in the [issue tracker](https://github.com/speedyrulz/rulz-photocraft/issues) with your Windows version and PhotoCraft version. As a test, you can switch on **System title bar** under **Edit › Preferences › Interface…**, click **Apply** and restart PhotoCraft; Windows then draws the title bar. See [Get help with a problem](get-help.md) for what to include.

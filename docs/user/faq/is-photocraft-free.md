@@ -9,6 +9,6 @@ Yes. PhotoCraft is one of the Crafting Apps, which the project describes as free
 
 PhotoCraft works offline. Its smart selection tools run on your computer, with no cloud and no account.
 
-The ArtCraft logos in the repository are not open source.
+The RulZ name and logo in the repository are not open source.
 
 See [Install PhotoCraft](../getting-started/install.md) to download it.
