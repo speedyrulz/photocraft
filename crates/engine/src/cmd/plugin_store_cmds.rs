@@ -11,8 +11,8 @@
 
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, OnceLock};
 use std::sync::mpsc::{Receiver, TryRecvError};
+use std::sync::{Arc, OnceLock};
 
 use photocraft_plugins::{Limits, Plugin, registry};
 use serde::{Deserialize, Serialize};
@@ -428,13 +428,8 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
     let installed_only = p.get("installed").and_then(Value::as_bool).unwrap_or(false);
     s.plugin_store.poll();
     let store = &s.plugin_store;
-    let plugins: Vec<Value> = store
-        .catalog
-        .iter()
-        .filter(|e| matches(e, query))
-        .filter(|e| !installed_only || registry::get(&e.id).is_some())
-        .map(|e| describe(store, e))
-        .collect();
+    let plugins: Vec<Value> =
+        store.catalog.iter().filter(|e| matches(e, query)).filter(|e| !installed_only || registry::get(&e.id).is_some()).map(|e| describe(store, e)).collect();
     Ok(json!({"available": store.fetch.is_some(), "busy": store.busy(), "plugins": plugins}))
 }
 
@@ -442,7 +437,9 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
 fn ids(cmd: &str, p: &Value) -> Result<Vec<String>> {
     let ids: Vec<String> = match (p.get("id"), p.get("ids")) {
         (Some(id), None) => vec![id.as_str().ok_or_else(|| bad(cmd, "`id` must be text"))?.to_string()],
-        (None, Some(Value::Array(a))) => a.iter().map(|v| v.as_str().map(str::to_string).ok_or_else(|| bad(cmd, "`ids` must be a list of text"))).collect::<Result<_>>()?,
+        (None, Some(Value::Array(a))) => {
+            a.iter().map(|v| v.as_str().map(str::to_string).ok_or_else(|| bad(cmd, "`ids` must be a list of text"))).collect::<Result<_>>()?
+        }
         (None, Some(_)) => return Err(bad(cmd, "`ids` must be a list of text")),
         _ => return Err(bad(cmd, "give `id` or `ids`")),
     };

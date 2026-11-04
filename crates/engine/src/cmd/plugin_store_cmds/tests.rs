@@ -182,7 +182,8 @@ fn uninstall_cancels_a_download_in_flight() {
 
 #[test]
 fn a_cancelled_download_keeps_its_slot_until_it_answers() {
-    let entries: Vec<Entry> = (0..MAX_RUNNING + 1).map(|k| entry(&format!("org.test.store.slot{k}"), "1", &module(&format!("org.test.store.slot{k}"), "1"))).collect();
+    let entries: Vec<Entry> =
+        (0..MAX_RUNNING + 1).map(|k| entry(&format!("org.test.store.slot{k}"), "1", &module(&format!("org.test.store.slot{k}"), "1"))).collect();
     let ids: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();
     let (mut s, served) = session(entries);
     s.execute("plugin.store.install", json!({"ids": ids[..MAX_RUNNING]})).unwrap();
@@ -260,7 +261,8 @@ fn a_newer_side_loaded_install_isnt_offered_the_older_listing() {
 
 #[test]
 fn downloads_beyond_the_limit_wait_their_turn() {
-    let entries: Vec<Entry> = (0..MAX_RUNNING + 2).map(|k| entry(&format!("org.test.store.queue{k}"), "1", &module(&format!("org.test.store.queue{k}"), "1"))).collect();
+    let entries: Vec<Entry> =
+        (0..MAX_RUNNING + 2).map(|k| entry(&format!("org.test.store.queue{k}"), "1", &module(&format!("org.test.store.queue{k}"), "1"))).collect();
     let ids: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();
     let (mut s, served) = session(entries);
     s.execute("plugin.store.install", json!({"ids": ids})).unwrap();
@@ -321,7 +323,8 @@ fn bad_params_and_a_missing_transport_are_errors() {
 
 #[test]
 fn list_filters_by_query_and_installed() {
-    let (mut s, _) = session(vec![entry("org.test.store.alpha", "1", b"a"), Entry { description: "Makes halftone dots".into(), ..entry("org.test.store.beta", "1", b"b") }]);
+    let (mut s, _) =
+        session(vec![entry("org.test.store.alpha", "1", b"a"), Entry { description: "Makes halftone dots".into(), ..entry("org.test.store.beta", "1", b"b") }]);
     let names = |v: Value| v["plugins"].as_array().unwrap().iter().map(|p| p["id"].as_str().unwrap().to_string()).collect::<Vec<_>>();
     assert_eq!(names(s.execute("plugin.store.list", json!({"query": "HALFTONE"})).unwrap()), ["org.test.store.beta"]);
     assert_eq!(names(s.execute("plugin.store.list", json!({"query": "alpha"})).unwrap()), ["org.test.store.alpha"]);
@@ -368,7 +371,8 @@ fn reinstalling_waits_for_the_cancelled_download_to_answer() {
 
 #[test]
 fn a_queued_download_can_be_cancelled_before_it_starts() {
-    let entries: Vec<Entry> = (0..MAX_RUNNING + 1).map(|k| entry(&format!("org.test.store.wait{k}"), "1", &module(&format!("org.test.store.wait{k}"), "1"))).collect();
+    let entries: Vec<Entry> =
+        (0..MAX_RUNNING + 1).map(|k| entry(&format!("org.test.store.wait{k}"), "1", &module(&format!("org.test.store.wait{k}"), "1"))).collect();
     let ids: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();
     let (mut s, served) = session(entries);
     s.execute("plugin.store.install", json!({"ids": ids})).unwrap();

@@ -1491,12 +1491,22 @@ impl Session {
             && let Some(theme) = interface.get("theme").and_then(Value::as_str).and_then(Theme::parse)
         {
             let (mode, slot) = match theme {
-                Theme::Pro | Theme::ProMedium | Theme::Studio | Theme::SolarizedDark | Theme::AdwaitaDark | Theme::BreezeDark | Theme::SoftDark | Theme::RulzDark => {
-                    ("dark", "darkTheme")
-                }
-                Theme::StudioLight | Theme::ProLightGray | Theme::ProLight | Theme::Classic | Theme::Adwaita | Theme::BreezeLight | Theme::SoftLight | Theme::RulzLight => {
-                    ("light", "lightTheme")
-                }
+                Theme::Pro
+                | Theme::ProMedium
+                | Theme::Studio
+                | Theme::SolarizedDark
+                | Theme::AdwaitaDark
+                | Theme::BreezeDark
+                | Theme::SoftDark
+                | Theme::RulzDark => ("dark", "darkTheme"),
+                Theme::StudioLight
+                | Theme::ProLightGray
+                | Theme::ProLight
+                | Theme::Classic
+                | Theme::Adwaita
+                | Theme::BreezeLight
+                | Theme::SoftLight
+                | Theme::RulzLight => ("light", "lightTheme"),
             };
             interface.insert("appearanceMode".into(), json!(mode));
             // A partially migrated file may already contain a newer theme selection (#5139).

@@ -241,12 +241,10 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
         });
     app.ui.plugin_store.open = open;
     match action {
-        Some(Action::Install(ids)) => {
-            match app.run("plugin.store.install", json!({"ids": ids})) {
-                Ok(_) => app.ui.plugin_store.selected.retain(|id| !ids.contains(id)),
-                Err(e) => app.ui.status = e,
-            }
-        }
+        Some(Action::Install(ids)) => match app.run("plugin.store.install", json!({"ids": ids})) {
+            Ok(_) => app.ui.plugin_store.selected.retain(|id| !ids.contains(id)),
+            Err(e) => app.ui.status = e,
+        },
         Some(Action::Uninstall(id)) => {
             if let Err(e) = app.run("plugin.store.uninstall", json!({"id": id})) {
                 app.ui.status = e;
