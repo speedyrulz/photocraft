@@ -221,6 +221,10 @@ fn blend_channel(mode: i32, cb: f32, cs: f32) -> f32 {
         }
         default: { return cs; }                                 // Normal, Dissolve, PassThrough
     }
+    // Never reached. FXC's optimiser (D3D12 release builds) rejects this function with X3507
+    // without it. Keep the default's return too: moving it out here makes the shader compile, but
+    // WARP then takes minutes rather than seconds to draw with it.
+    return cs;
 }
 
 fn lum(c: vec3<f32>) -> f32 { return 0.3 * c.r + 0.59 * c.g + 0.11 * c.b; }

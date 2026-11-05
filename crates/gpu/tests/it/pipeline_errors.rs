@@ -49,6 +49,35 @@ fn a_compositor_with_failed_pipelines_draws_without_panicking() {
     let _ = render_to_vec(&mut comp, &device, &queue, &doc, doc.bounds());
 }
 
+/// #8733: the app compiles shaders with FXC on Direct3D 12 (`d3dcompiler_47.dll`, part of Windows)
+/// unless a DXC ships beside it, and FXC doesn't accept every shader the other backends do: a
+/// function that returned only from inside a `switch` failed with X3507 and sent every redraw to
+/// the CPU. So every pipeline has to build under FXC specifically, whichever backend and compiler
+/// this machine's other tests happen to pick. wgpu's DEBUG flag stays off even in a debug test
+/// build: it turns off FXC's optimiser, and X3507 came from the optimiser, so only release builds
+/// (the ones people run) failed.
+#[cfg(windows)]
+#[test]
+fn every_pipeline_builds_under_fxc() {
+    let _lock = GPU_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut desc = wgpu::InstanceDescriptor::new_without_display_handle_from_env();
+    desc.backends = wgpu::Backends::DX12;
+    desc.backend_options.dx12.shader_compiler = wgpu::Dx12Compiler::Fxc;
+    desc.flags.remove(wgpu::InstanceFlags::DEBUG);
+    let instance = wgpu::Instance::new(desc);
+    let Ok(adapter) = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())) else {
+        eprintln!("skipping: no DX12 adapter");
+        return;
+    };
+    let Ok((device, _queue)) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())) else {
+        eprintln!("skipping: no DX12 device");
+        return;
+    };
+    if let Err(e) = Compositor::try_new_with_format(&device, Compositor::preferred_acc_format(&adapter)) {
+        panic!("FXC rejected the compositor on {}: {}", adapter.get_info().name, e.0);
+    }
+}
+
 /// #9173: the compositor builds its pipelines on several threads (#6419). On Direct3D 12 with FXC,
 /// wgpu-hal caches each compiled shader as an `ID3DBlob` whose reference count isn't atomic
 /// (gfx-rs/wgpu#10547), so two threads building pipelines from the same shader could free a blob
