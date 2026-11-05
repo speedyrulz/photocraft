@@ -61,8 +61,14 @@ impl Section {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Kind {
     Bool,
-    Int { min: i64, max: i64 },
-    Float { min: f64, max: f64 },
+    Int {
+        min: i64,
+        max: i64,
+    },
+    Float {
+        min: f64,
+        max: f64,
+    },
     /// One line of text.
     Text,
     /// Several lines of text.
@@ -292,9 +298,11 @@ fn checked(o: &Opt, value: &Value) -> Result<Value> {
             let n = value.as_i64().or_else(|| value.as_f64().filter(|f| f.is_finite() && f.fract() == 0.0 && f.abs() < 9e15).map(|f| f as i64));
             n.filter(|n| (min..=max).contains(n)).map(|n| json!(n)).ok_or_else(|| bad(format!("must be a whole number from {min} to {max}")))
         }
-        Kind::Float { min, max } => {
-            value.as_f64().filter(|n| n.is_finite() && (min..=max).contains(n)).map(|_| value.clone()).ok_or_else(|| bad(format!("must be a number from {min} to {max}")))
-        }
+        Kind::Float { min, max } => value
+            .as_f64()
+            .filter(|n| n.is_finite() && (min..=max).contains(n))
+            .map(|_| value.clone())
+            .ok_or_else(|| bad(format!("must be a number from {min} to {max}"))),
         Kind::Text | Kind::Multiline => value.as_str().filter(|s| s.len() <= 1 << 20).map(|s| json!(s)).ok_or_else(|| bad("must be text".into())),
         Kind::Choice => {
             value.as_str().filter(|s| !s.is_empty() && s.len() <= 4096).map(|s| json!(s)).ok_or_else(|| bad("must name one of the server's choices".into()))
@@ -487,8 +495,18 @@ mod tests {
 
     #[test]
     fn stages_never_run_backwards_through_a_normal_run() {
-        let order =
-            [("343", 0.0, 0.0), ("7:1", 0.0, 0.0), ("129", 0.0, 0.0), ("14", 0.0, 0.0), ("15", 0.0, 8.0), ("15", 8.0, 8.0), ("124", 0.0, 0.0), ("318", 0.0, 0.0), ("148", 0.0, 0.0), ("342", 0.0, 0.0)];
+        let order = [
+            ("343", 0.0, 0.0),
+            ("7:1", 0.0, 0.0),
+            ("129", 0.0, 0.0),
+            ("14", 0.0, 0.0),
+            ("15", 0.0, 8.0),
+            ("15", 8.0, 8.0),
+            ("124", 0.0, 0.0),
+            ("318", 0.0, 0.0),
+            ("148", 0.0, 0.0),
+            ("342", 0.0, 0.0),
+        ];
         let fractions: Vec<f32> = order.iter().map(|(n, d, t)| stage(n, *d, *t).0).collect();
         assert!(fractions.windows(2).all(|w| w[0] <= w[1]), "{fractions:?}");
         assert_eq!(stage("15", 3.0, 8.0).1, "Sampling: step 3 of 8");
