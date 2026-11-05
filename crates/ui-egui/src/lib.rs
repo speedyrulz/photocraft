@@ -125,6 +125,7 @@ pub use canvas::zoom_window_fit;
 pub use dialogs::adjust_dialog;
 pub use dialogs::adjust_editors;
 pub use dialogs::adjust_preview;
+pub use dialogs::ai_upscale_ui;
 pub(crate) use dialogs::bitmap_dialog;
 pub use dialogs::blur_pins;
 pub use dialogs::brush_preset_dialog;

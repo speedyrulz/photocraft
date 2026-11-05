@@ -287,6 +287,7 @@ fn command_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, d: &Dialog, fields: 
         _ if crate::fill_ui::owns(fields) => crate::fill_ui::body(app, ui, fields),
         _ if crate::pattern_fill_ui::owns(fields) => crate::pattern_fill_ui::body(app, ui, fields),
         _ if crate::stroke_ui::owns(fields) => crate::stroke_ui::body(ui, fields),
+        _ if crate::ai_upscale_ui::owns(fields) => crate::ai_upscale_ui::body(ui, fields),
         _ if crate::new_group_ui::owns(fields) => crate::new_group_ui::body(ui, fields),
         _ if crate::snapshot_dialog::owns(fields) => crate::snapshot_dialog::body(ui, fields),
         _ if crate::channel_options_ui::owns(fields) => crate::channel_options_ui::body(ui, fields),
@@ -531,6 +532,8 @@ fn ok_label(d: &Dialog) -> &'static str {
         tl!("Replace")
     } else if d.fields.contains_key("__export") {
         tl!("Export")
+    } else if crate::ai_upscale_ui::owns(&d.fields) {
+        tl!("Upscale")
     } else {
         crate::file_ui::ok_label(&d.fields).unwrap_or(tl!("OK"))
     }
@@ -846,6 +849,7 @@ const ROUTES: &[fn(&Fields) -> bool] = &[
     crate::fill_ui::owns,
     crate::pattern_fill_ui::owns,
     crate::stroke_ui::owns,
+    crate::ai_upscale_ui::owns,
     crate::channel_options_ui::owns,
     crate::channel_options_ui::owns_new_spot,
     crate::shape_dialog::owns,
@@ -1012,6 +1016,7 @@ fn confirm_command(app: &mut PhotocraftApp, d: Dialog) -> Result<Value, String> 
         _ if crate::fill_ui::owns(&d.fields) => crate::fill_ui::confirm(app, &d.fields),
         _ if crate::pattern_fill_ui::owns(&d.fields) => crate::pattern_fill_ui::confirm(app, &d.fields),
         _ if crate::stroke_ui::owns(&d.fields) => crate::stroke_ui::confirm(app, &d.fields),
+        _ if crate::ai_upscale_ui::owns(&d.fields) => crate::ai_upscale_ui::confirm(app, &d.fields),
         _ if crate::new_group_ui::owns(&d.fields) => crate::new_group_ui::confirm(app, &d.fields),
         _ if crate::snapshot_dialog::owns(&d.fields) => crate::snapshot_dialog::confirm(app, &d.fields),
         _ if crate::channel_options_ui::owns(&d.fields) => crate::channel_options_ui::confirm(app, &d.fields),
@@ -1155,6 +1160,7 @@ pub fn open_command_dialog(app: &mut PhotocraftApp, command: &str, label: &str) 
 pub mod adjust_dialog;
 pub mod adjust_editors;
 pub mod adjust_preview;
+pub mod ai_upscale_ui;
 pub(crate) mod bitmap_dialog;
 pub mod blur_pins;
 pub mod brush_preset_dialog;

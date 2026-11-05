@@ -550,6 +550,22 @@ fn automation_rejects_ambient_path_commands_and_preferences() {
 }
 
 #[test]
+fn ai_commands_may_only_reach_a_server_on_this_machine() {
+    for id in ["ai.upscale", "ai.comfyInfo"] {
+        assert!(authorize_engine_command(id, &serde_json::json!({"url": "http://127.0.0.1:8188"})).is_ok(), "{id}");
+        assert!(authorize_engine_command(id, &serde_json::json!({"url": "http://localhost:8188"})).is_ok(), "{id}");
+        for denied in [
+            serde_json::json!({"url": "http://example.com:8188"}),
+            serde_json::json!({"url": "http://192.168.1.5:8188"}),
+            serde_json::json!({"url": 3}),
+            serde_json::json!({}),
+        ] {
+            assert!(authorize_engine_command(id, &denied).is_err(), "{id} {denied}");
+        }
+    }
+}
+
+#[test]
 fn registry_filesystem_path_params_are_classified() {
     let probe = serde_json::json!({
         "path": "/outside/photocraft-probe",

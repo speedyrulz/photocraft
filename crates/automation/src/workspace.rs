@@ -370,6 +370,11 @@ pub fn authorize_engine_command(id: &str, params: &Value) -> Result<(), Automati
     if id.starts_with("file.") && !safe_file_command {
         return Err(command_error(id));
     }
+    // The AI commands send the document to the address they are given: only this machine counts,
+    // or a compromised automation client could carry the image anywhere.
+    if id.starts_with("ai.") && !params.get("url").and_then(Value::as_str).is_some_and(photocraft_engine::ai_cmds::is_local_server) {
+        return Err(command_error(id));
+    }
     // Contents commands re-check the resolved source in the engine before any disk read.
     // Photoshop's embedded linked-layer blocks count as in-memory sources too.
     let in_memory_smart_command = matches!(
