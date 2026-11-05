@@ -155,7 +155,7 @@
       "Vision Model": "qwen-pe/pe_i2i_heretic.mmproj-bf16.gguf",
       "GPU Offload Layers": -1,
       "Context Length": "16384",
-      "System Prompt File": "/home/jeff/ComfyUI/models/LLM/system_prompt.txt",
+      "System Prompt File": "",
       "Thinking": false,
       "Unload Model After Generation": true,
       "Plan Tokens": 800

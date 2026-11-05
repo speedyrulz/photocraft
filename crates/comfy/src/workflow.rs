@@ -423,6 +423,14 @@ mod tests {
     }
 
     #[test]
+    fn the_bundled_workflow_carries_no_machine_s_paths() {
+        assert_eq!(defaults()["peSystemPromptFile"], "");
+        for marker in ["/home/", "/Users/", ":\\\\"] {
+            assert!(!UPSCALE.contains(marker), "{marker}");
+        }
+    }
+
+    #[test]
     fn params_land_on_their_nodes() {
         let p = params(json!({"seed": 77, "unet": "m.safetensors", "steps": 12, "cfg": 2.5, "prompt": "hello", "promptEnhancement": false}));
         let g = build(&p, "a.png", 100, 100).unwrap();
