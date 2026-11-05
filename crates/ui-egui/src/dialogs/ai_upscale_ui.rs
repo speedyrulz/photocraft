@@ -333,7 +333,8 @@ fn server_rows(ui: &mut egui::Ui, f: &mut Map<String, Value>) {
         ui.set_max_width(FIELD_W);
         ui.add(egui::Label::new(egui::RichText::new(status).font(FontId::proportional(11.5)).color(color)).wrap());
     });
-    let missing: Vec<String> = f.get("__missing").and_then(Value::as_array).map(|l| l.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default();
+    let missing: Vec<String> =
+        f.get("__missing").and_then(Value::as_array).map(|l| l.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default();
     let absent = absent_choices(f);
     let warning = if !missing.is_empty() {
         let template = "This server lacks nodes the workflow needs: {nodes}";

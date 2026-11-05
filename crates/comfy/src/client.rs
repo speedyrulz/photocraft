@@ -200,7 +200,14 @@ impl Client {
     /// Follow prompt `id` until it finishes and return what node `output` saved. `cancelled` is
     /// asked every turn; when it says so the job is taken off the server. `update` hears how it's
     /// going.
-    pub fn wait(&self, id: &str, output: &str, mut progress: Option<Progress>, cancelled: &dyn Fn() -> bool, update: &mut dyn FnMut(Update)) -> Result<ImageRef> {
+    pub fn wait(
+        &self,
+        id: &str,
+        output: &str,
+        mut progress: Option<Progress>,
+        cancelled: &dyn Fn() -> bool,
+        update: &mut dyn FnMut(Update),
+    ) -> Result<ImageRef> {
         let mut last_poll: Option<Instant> = None;
         let (mut failures, mut lost) = (0u32, 0u32);
         let mut running = false;
@@ -285,7 +292,8 @@ impl Client {
     /// whatever the server says.
     pub fn stop(&self, id: &str) {
         let _ = self.post_json("/queue", &json!({"delete": [id]}));
-        let running = self.get_json("/queue").is_ok_and(|q| q.get("queue_running").and_then(Value::as_array).is_some_and(|r| r.iter().any(|e| entry_id(e) == Some(id))));
+        let running =
+            self.get_json("/queue").is_ok_and(|q| q.get("queue_running").and_then(Value::as_array).is_some_and(|r| r.iter().any(|e| entry_id(e) == Some(id))));
         if running {
             let _ = self.post_json("/interrupt", &json!({"prompt_id": id}));
         }
@@ -456,7 +464,9 @@ fn path_encode(text: &str) -> String {
 /// The `multipart/form-data` body of an upload.
 fn multipart(boundary: &str, filename: &str, png: &[u8]) -> Vec<u8> {
     let mut body = Vec::with_capacity(png.len() + 512);
-    body.extend_from_slice(format!("--{boundary}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"{filename}\"\r\nContent-Type: image/png\r\n\r\n").as_bytes());
+    body.extend_from_slice(
+        format!("--{boundary}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"{filename}\"\r\nContent-Type: image/png\r\n\r\n").as_bytes(),
+    );
     body.extend_from_slice(png);
     for (name, value) in [("type", "input"), ("overwrite", "true")] {
         body.extend_from_slice(format!("\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}").as_bytes());
@@ -651,12 +661,14 @@ mod tests {
 
     #[test]
     fn a_whole_run_against_a_fake_server() {
-        let (url, seen) = server(|path| match path.split('?').next().unwrap_or("") {
+        let (url, seen) = server(|path| {
+            match path.split('?').next().unwrap_or("") {
             "/upload/image" => (200, br#"{"name": "stored.png", "subfolder": "", "type": "input"}"#.to_vec()),
             "/prompt" => (200, br#"{"prompt_id": "abc", "number": 1, "node_errors": {}}"#.to_vec()),
             "/history/abc" => (200, br#"{"abc": {"status": {"status_str": "success", "completed": true}, "outputs": {"342": {"images": [{"filename": "o.png", "subfolder": "", "type": "temp"}]}}}}"#.to_vec()),
             "/view" => (200, b"PNGBYTES".to_vec()),
             _ => (404, b"{}".to_vec()),
+        }
         });
         let client = Client::new(&url).unwrap();
         assert_eq!(client.upload_png(b"source").unwrap(), "stored.png");

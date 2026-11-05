@@ -133,7 +133,8 @@ fn run_job(s: &mut Session, doc: std::sync::Arc<photocraft_doc::Document>, url: 
             let bytes = client.download(&output).map_err(comfy_error)?;
             ctx.check()?;
             ctx.progress(0.98, "Opening the result");
-            let imported = photocraft_io::import_with_options(&output.filename, &bytes, &import).map_err(|e| crate::error::io_open_error(&output.filename, e))?;
+            let imported =
+                photocraft_io::import_with_options(&output.filename, &bytes, &import).map_err(|e| crate::error::io_open_error(&output.filename, e))?;
             Ok(imported.document)
         },
         move |s, mut result| {
