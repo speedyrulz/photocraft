@@ -43,6 +43,8 @@ pub const TABLE: &[(&str, Class)] = &[
     ("heif", Class::Standalone),
     // IPP client for CUPS printing (pure Rust, no dependencies), used by `engine` on Unix.
     ("ipp", Class::Standalone),
+    // ComfyUI workflows and API client, used by `engine` for the AI menu.
+    ("comfy", Class::Standalone),
     ("raw", Class::Standalone),
     ("affinity", Class::Standalone),
     ("adobe-assets", Class::Standalone),

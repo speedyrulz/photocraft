@@ -1004,6 +1004,36 @@ pub(crate) fn export_flat_with(doc: &Document, format: Format, opts: &ExportOpti
     encode_image(&img, format, opts, warnings)
 }
 
+/// The flattened document as an 8-bit sRGB PNG with no transparency (matted over white) and no
+/// metadata: what image services that ignore colour profiles and alpha read correctly. Used to
+/// hand the image to ComfyUI, whatever the document's mode and depth.
+pub fn export_srgb_png(doc: &Document) -> Result<Vec<u8>, IoError> {
+    use photocraft_cms::{Builtin, Intent};
+    let mut warnings = Vec::new();
+    let mut img = document_to_image_for(doc, &mut warnings, false, false)?;
+    if img.layout().has_alpha() {
+        img = matte_over_white(&img)?;
+    }
+    if img.layout().is_cmyk() {
+        img = cmyk_image_to_srgb(&img)?;
+    }
+    if let Some(gray) = convert_gray(&img, Builtin::SGray.profile(), CSample::U8)? {
+        img = gray;
+    }
+    if let Some(srgb) = convert_rgb(&img, Builtin::Srgb.profile(), Intent::Perceptual, true, CSample::U8)? {
+        img = srgb;
+    }
+    // Already sRGB is no conversion above, so the depth comes down here.
+    if img.sample_type() != CSample::U8 {
+        let layout = img.layout();
+        img = map_bands(&img, layout, CSample::U8, |vals| vals.into_iter().map(|v| v.clamp(0.0, 1.0)).collect())?;
+    }
+    img.icc = None;
+    img.meta = Default::default();
+    let opts = ExportOptions::default();
+    Ok(encode_image(&img, Format::Png, &opts, warnings)?.bytes)
+}
+
 /// Export As's Metadata: None drops the XMP packet, which lists the text of every type layer and
 /// one id per placed document (#647), and the free-form descriptions, which can hold the same
 /// sensitive text.

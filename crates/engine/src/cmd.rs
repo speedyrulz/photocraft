@@ -53,6 +53,7 @@ pub mod actions_cmds;
 pub mod actions_edit_cmds;
 pub mod adjust_cmds;
 mod adjust_params;
+pub mod ai_cmds;
 pub mod align_cmds;
 pub mod analysis_cmds;
 pub mod artboard_cmds;
@@ -1352,6 +1353,7 @@ fn build() -> Vec<CommandSpec> {
     v.extend(crate::stamp_cmds::specs());
     v.extend(crate::align_cmds::specs());
     v.extend(crate::photo_cmds::specs());
+    v.extend(crate::ai_cmds::specs());
     v.extend(crate::lens_cmds::specs());
     v.extend(crate::vp_cmds::specs());
     v.extend(crate::channel_cmds::specs());

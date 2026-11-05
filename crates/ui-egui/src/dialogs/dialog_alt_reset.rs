@@ -24,6 +24,8 @@ pub fn apply(app: &mut PhotocraftApp, ctx: &egui::Context, fields: &mut Map<Stri
     // Dispatch order matches `dialogs::show` so `__adjust` wins over `__filter`.
     if crate::guide_layout_ui::owns(fields) {
         crate::guide_layout_ui::reset(app, fields);
+    } else if crate::ai_upscale_ui::owns(fields) {
+        crate::ai_upscale_ui::reset(fields);
     } else if crate::fill_ui::owns(fields) {
         crate::fill_ui::reset(app, fields);
     } else if crate::variables_ui::owns(fields) {
@@ -45,6 +47,8 @@ pub fn apply(app: &mut PhotocraftApp, ctx: &egui::Context, fields: &mut Map<Stri
 fn match_arm(fields: &Map<String, Value>) -> Option<&'static str> {
     if crate::guide_layout_ui::owns(fields) {
         Some("guideLayout")
+    } else if crate::ai_upscale_ui::owns(fields) {
+        Some("aiUpscale")
     } else if crate::fill_ui::owns(fields) {
         Some("fill")
     } else if crate::variables_ui::owns(fields) && fields.contains_key("__variablesOrig") {

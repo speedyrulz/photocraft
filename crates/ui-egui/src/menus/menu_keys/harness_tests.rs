@@ -60,7 +60,7 @@ fn alt_focuses_the_bar_arrows_move_and_down_opens_the_lit_menu() {
     assert_eq!(Keys::current(&h.ctx).focus, Some(1), "→ moves to Edit");
     key(&mut h, egui::Key::ArrowLeft);
     key(&mut h, egui::Key::ArrowLeft);
-    assert_eq!(Keys::current(&h.ctx).focus, Some(10), "← wraps round to Help");
+    assert_eq!(Keys::current(&h.ctx).focus, Some(11), "← wraps round to Help");
     key(&mut h, egui::Key::ArrowRight);
     key(&mut h, egui::Key::ArrowRight);
     assert_eq!(Keys::current(&h.ctx).focus, Some(1));
@@ -582,9 +582,9 @@ fn a_menu_opened_while_typing_a_zoom_takes_its_keys() {
     let mut h = bar_and_zoom_field(|| {
         BEEPS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     });
-    h.get_by_label("Filter").click();
+    h.get_by_label("AI").click();
     h.run_steps(4);
-    assert!(is_open(&h.ctx), "the click opened Filter");
+    assert!(is_open(&h.ctx), "the click opened AI");
     assert!(crate::zoom_field::is_focused(&h.ctx), "the zoom field kept the keyboard");
     h.key_press(egui::Key::ArrowRight);
     h.run_steps(5);
