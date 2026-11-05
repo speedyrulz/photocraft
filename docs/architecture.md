@@ -129,6 +129,7 @@ photocraft/
 │  ├─ codecs/                  photocraft-codecs    flat raster decode/encode at format-supported depths; AVIF encode only (feature `avif`), HEIF/HEIC decode only (feature `heif`); no JPEG XL
 │  ├─ heif/                    photocraft-heif      optional HEIF/HEIC decoder (heic-rs, pure Rust); used only by codecs behind its `heif` feature (standalone)
 │  ├─ affinity/                photocraft-affinity  bounded native Affinity reader: archive, object stream, layers, vectors, text, pixels (standalone; read only)
+│  ├─ comfy/                   photocraft-comfy     bundled ComfyUI workflows, their option table, and a client for a ComfyUI server's API; the AI menu (standalone; client is desktop only)
 │  ├─ raw/                     photocraft-raw       clean-room camera RAW decode (DNG, CR2, TIFF/EP) + develop pipeline (standalone, like psd)
 │  ├─ format/                  photocraft-format    native document format (.pcraft bundle): manifest + content-addressed tiles
 │  ├─ io/                      photocraft-io        import/export orchestration; doc ⇄ PSD mapping; PDF/SVG import (features)
@@ -173,7 +174,7 @@ photocraft/
  L3  compose · gpu · format
  L2  ops · algo · paint · text · vector
  L1  doc
- L0  geom · cms · color · raster           psd, codecs, raw, adobe-assets (standalone, no workspace deps)
+ L0  geom · cms · color · raster           psd, codecs, raw, comfy, adobe-assets (standalone, no workspace deps)
 ```
 
 **Rules** (checked by `cargo xtask layers` in CI, which parses `cargo metadata`):
