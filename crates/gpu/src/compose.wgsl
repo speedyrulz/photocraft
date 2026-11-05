@@ -219,8 +219,11 @@ fn blend_channel(mode: i32, cb: f32, cs: f32) -> f32 {
             if (cs >= 1.0) { return 1.0; }
             return min(cb / (1.0 - cs), 1.0);
         }
-        default: { return cs; }                                 // Normal, Dissolve, PassThrough
+        default: {}
     }
+    // Normal, Dissolve, PassThrough. After the switch, not in its default: FXC's optimiser (D3D12
+    // release builds) rejects this function with X3507 when every return is inside the switch.
+    return cs;
 }
 
 fn lum(c: vec3<f32>) -> f32 { return 0.3 * c.r + 0.59 * c.g + 0.11 * c.b; }
