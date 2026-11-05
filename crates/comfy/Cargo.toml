@@ -1,0 +1,19 @@
+[package]
+name = "photocraft-comfy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+# The browser build has no client (a page can't reach a ComfyUI server across origins).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# The same HTTP client and TLS setup the updater links (craft-update).
+ureq = { version = "3.4", default-features = false, features = ["rustls-no-provider", "_ring", "platform-verifier"] }
+# Live step progress from ComfyUI's `/ws`. Plain ws:// only: https servers report through polling.
+tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
