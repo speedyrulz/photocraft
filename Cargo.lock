@@ -5328,6 +5328,7 @@ dependencies = [
  "resvg",
  "roxmltree 0.21.1",
  "serde_json",
+ "simplecss",
  "thiserror 2.0.21",
  "tiff",
  "zune-core 0.5.3",
