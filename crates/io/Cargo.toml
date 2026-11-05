@@ -42,6 +42,9 @@ blake3 = { version = "1.8", default-features = false, features = ["pure"] }
 flate2 = { workspace = true }
 # ora.rs reads OpenRaster's stack.xml (already in the tree through usvg).
 roxmltree = "0.21"
+# svg/depth.rs matches style sheets as usvg does, to follow references written in CSS (already in
+# the tree through usvg).
+simplecss = "0.2"
 # Reuse usvg's locked header reader to bound embedded SVG raster data before decoding.
 imagesize = "0.13"
 # SVG import (svg.rs): usvg parses, resvg rasterises what the shape model can't hold. Both are

@@ -411,6 +411,114 @@ fn deeply_nested_markup_is_an_error_not_a_stack_overflow() {
     assert_eq!(r.document.layers.len(), 1);
 }
 
+/// A drawing whose `links` definitions each refer to the one before: flat XML that usvg and resvg
+/// still recurse through, one level per link. `def` writes link `i`, `last` is what draws.
+fn chain(links: usize, style: &str, def: impl Fn(usize) -> String, last: &str) -> String {
+    let defs: String = (0..links).map(def).collect();
+    format!("<svg {NS} width=\"8\" height=\"8\"><style>{style}</style><defs>{defs}</defs>{last}</svg>")
+}
+
+fn pattern_chain(links: usize) -> String {
+    let def = |i: usize| {
+        let fill = if i == 0 { "#000".to_string() } else { format!("url(#a{})", i - 1) };
+        format!("<pattern id=\"a{i}\" width=\"8\" height=\"8\" patternUnits=\"userSpaceOnUse\"><rect width=\"8\" height=\"8\" fill=\"{fill}\"/></pattern>")
+    };
+    chain(links, "", def, &format!("<rect width=\"8\" height=\"8\" fill=\"url(#a{})\"/>", links - 1))
+}
+
+/// Runs `f` on a stack far too small for what SVG import recurses through, so any of that work left
+/// on the caller's thread aborts the test run.
+fn on_a_tiny_stack(f: impl FnOnce() + Send + 'static) {
+    std::thread::Builder::new().stack_size(256 << 10).spawn(f).unwrap().join().unwrap();
+}
+
+/// The XML of these drawings is three levels deep, so the nesting check never saw them. 100
+/// patterns overflowed a 1 MB stack and 5 000 (500 KB of XML) needed 64 MB: they are errors now,
+/// wherever the reference is written.
+#[test]
+fn reference_chains_are_an_error_not_a_stack_overflow() {
+    const LINKS: usize = 2_000;
+    let last = |attribute: &str| format!("<rect width=\"8\" height=\"8\" {attribute}=\"url(#a{})\"/>", LINKS - 1);
+    let link = |i: usize| if i == 0 { String::new() } else { format!("url(#a{})", i - 1) };
+    let quoted = |i: usize| if i == 0 { String::new() } else { format!("fill:url( '#a{}' )", i - 1) };
+    let rules: String = (1..LINKS).map(|i| format!(".c{i}{{fill:url(#a{})}}", i - 1)).collect();
+    let cases = [
+        ("pattern fills", pattern_chain(LINKS)),
+        (
+            "clip paths",
+            chain(LINKS, "", |i| format!("<clipPath id=\"a{i}\" clip-path=\"{}\"><rect width=\"8\" height=\"8\"/></clipPath>", link(i)), &last("clip-path")),
+        ),
+        ("masks", chain(LINKS, "", |i| format!("<mask id=\"a{i}\" mask=\"{}\"><rect width=\"8\" height=\"8\"/></mask>", link(i)), &last("mask"))),
+        ("uses", chain(LINKS, "", |i| format!("<g id=\"a{i}\"><use href=\"#a{}\"/></g>", i.saturating_sub(1)), "<use href=\"#a1\"/>")),
+        (
+            "style attributes",
+            chain(
+                LINKS,
+                "",
+                move |i| format!("<pattern id=\"a{i}\" width=\"8\" height=\"8\"><rect width=\"8\" height=\"8\" style=\"{}\"/></pattern>", quoted(i)),
+                &last("fill"),
+            ),
+        ),
+        (
+            "style sheet rules",
+            chain(
+                LINKS,
+                &rules,
+                |i| format!("<pattern id=\"a{i}\" width=\"8\" height=\"8\"><rect class=\"c{i}\" width=\"8\" height=\"8\"/></pattern>"),
+                &last("fill"),
+            ),
+        ),
+    ];
+    on_a_tiny_stack(move || {
+        for (what, xml) in cases {
+            let e = import("chain.svg", xml.as_bytes()).err().unwrap_or_else(|| panic!("{what} opened"));
+            assert!(matches!(&e, IoError::Svg(m) if m.contains("nested")), "{what}: {e}");
+            assert!(svg::rasterize_bounded(xml.as_bytes(), 1.0, 1 << 20).is_err(), "{what}");
+        }
+    });
+}
+
+/// usvg breaks a reference cycle, so one can't be left out of the count: it must not hide the long
+/// chain that hangs off it.
+#[test]
+fn a_reference_cycle_does_not_hide_a_chain_behind_it() {
+    const LINKS: usize = 2_000;
+    let def = |i: usize| {
+        let next = if i + 1 == LINKS { "url(#a0)".to_string() } else { format!("url(#a{})", i + 1) };
+        format!("<pattern id=\"a{i}\" width=\"8\" height=\"8\" patternUnits=\"userSpaceOnUse\"><rect width=\"8\" height=\"8\" fill=\"{next}\"/></pattern>")
+    };
+    let xml = chain(LINKS, "", def, "<rect width=\"8\" height=\"8\" fill=\"url(#a0)\"/>");
+    on_a_tiny_stack(move || {
+        let e = import("cycle.svg", xml.as_bytes()).err().unwrap_or_else(|| panic!("a 2 000-link cycle opened"));
+        assert!(matches!(&e, IoError::Svg(m) if m.contains("nested")), "{e}");
+    });
+}
+
+/// The longest chain allowed, at the most stack-hungry link measured, works on any caller's stack.
+#[test]
+fn the_deepest_reference_chain_allowed_opens_on_a_tiny_stack() {
+    on_a_tiny_stack(|| {
+        // A link is two levels: the pattern and the rect it fills.
+        let r = open(&pattern_chain(svg::MAX_XML_DEPTH / 2 - 2));
+        assert!(px(&r.document, 4, 4)[3] > 0.99, "{:?}", px(&r.document, 4, 4));
+        // Nested `<svg>` costs the most per level of plain XML.
+        let deep = format!("<svg {NS} width=\"8\" height=\"8\">{}<rect width=\"8\" height=\"8\"/>{}</svg>", "<svg>".repeat(500), "</svg>".repeat(500));
+        assert!(svg::rasterize_bounded(deep.as_bytes(), 1.0, 1 << 20).is_ok());
+    });
+}
+
+/// A small cycle is a mistake usvg recovers from, not a reason to refuse the file.
+#[test]
+fn a_short_reference_cycle_still_opens() {
+    let r = open(&format!(
+        "<svg {NS} width=\"8\" height=\"8\">\
+           <pattern id=\"p\" width=\"8\" height=\"8\"><rect width=\"8\" height=\"8\" fill=\"url(#p)\"/></pattern>\
+           <rect width=\"8\" height=\"8\" fill=\"#000\"/><rect width=\"4\" height=\"4\" fill=\"url(#p)\"/>\
+         </svg>"
+    ));
+    assert_eq!(px(&r.document, 6, 6)[3], 1.0);
+}
+
 /// The depth check reads the markup, not the parser's tree: it must not count `<` in comments,
 /// CDATA, processing instructions or the DOCTYPE, nor end a tag at a `>` inside quotes.
 #[test]

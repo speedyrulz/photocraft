@@ -24,6 +24,8 @@ use resvg::usvg;
 
 use crate::{ImportResult, IoError};
 
+mod depth;
+
 /// Largest canvas side an SVG opens at; a larger drawing is scaled down to fit.
 pub const MAX_SIDE: u32 = 16_384;
 /// A rasterised fallback layer or a smart-object render never exceeds this many pixels.
@@ -109,8 +111,52 @@ const MAX_RECURSION: usize = 200;
 /// a few thousand deep (70 KB of `<g>`) overflows a 2 MB thread stack, an abort no guard can
 /// catch; real drawings stay under a hundred levels.
 pub const MAX_XML_DEPTH: usize = 512;
+/// Deepest chain of nested elements and references accepted ([`depth::drawing_depth`]), shared
+/// with any SVG images embedded in the drawing. `usvg` and `resvg` recurse along it, at up to
+/// 7 KB of stack per level in a release build. The browser has no [`on_svg_stack`] to run them
+/// on, only its 1 MB stack, so it allows what real drawings need.
+const MAX_DRAWING_DEPTH: usize = if cfg!(target_arch = "wasm32") { 100 } else { MAX_XML_DEPTH };
+/// Stack of the thread [`on_svg_stack`] starts: [`MAX_DRAWING_DEPTH`] levels at the worst measured
+/// cost take 4 MB, and the rest is headroom for embedded images and slower builds. Memory is only
+/// committed as it is used.
+#[cfg(not(target_arch = "wasm32"))]
+const SVG_STACK_BYTES: usize = 32 << 20;
 /// Largest `.svgz` accepted once inflated (a 1.5 MB gzip can hold 1.5 GB of whitespace).
 pub const MAX_INFLATED_BYTES: u64 = 128 << 20;
+
+/// Runs `work`, which parses, draws or drops a `usvg` tree, where its recursion can't overflow.
+/// Windows gives the UI thread 1 MB of stack, less than [`MAX_DRAWING_DEPTH`] takes, and an
+/// overflow is an abort no guard can catch.
+#[cfg(not(target_arch = "wasm32"))]
+fn on_svg_stack<T: Send>(work: impl FnOnce() -> Result<T, IoError> + Send) -> Result<T, IoError> {
+    std::thread::scope(|scope| {
+        let worker = std::thread::Builder::new()
+            .name("svg".into())
+            .stack_size(SVG_STACK_BYTES)
+            .spawn_scoped(scope, work)
+            .map_err(|e| IoError::Svg(format!("can't start the SVG reader: {e}")))?;
+        worker.join().unwrap_or_else(|_| Err(IoError::Svg("the SVG reader failed on this file".into())))
+    })
+}
+
+/// Runs `work` on this stack: the browser has no threads, so [`MAX_DRAWING_DEPTH`] is lower.
+#[cfg(target_arch = "wasm32")]
+fn on_svg_stack<T: Send>(work: impl FnOnce() -> Result<T, IoError> + Send) -> Result<T, IoError> {
+    work()
+}
+
+/// Parses `text` the way `usvg` does, for [`usvg::Tree::from_xmltree`]. A drawing whose elements
+/// and references chain deeper than `limit` is an error here, before `usvg` recurses along them.
+/// Returns the document and that depth.
+fn read_xml(text: &str, limit: usize) -> Result<(usvg::roxmltree::Document<'_>, usize), IoError> {
+    let options = usvg::roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() };
+    let doc = usvg::roxmltree::Document::parse_with_options(text, options).map_err(|e| IoError::Svg(usvg::Error::ParsingFailed(e).to_string()))?;
+    let depth = depth::drawing_depth(&doc);
+    if depth > limit {
+        return Err(IoError::Svg(format!("elements and their references are nested more than {limit} levels deep")));
+    }
+    Ok((doc, depth))
+}
 
 /// Does this look like an SVG document (plain XML; `.svgz` is recognised by its extension)?
 pub fn is_svg(bytes: &[u8]) -> bool {
@@ -287,7 +333,7 @@ fn font_resolver() -> usvg::FontResolver<'static> {
 /// or relative href is never read, so opening an SVG cannot pull local files (`/etc/...`,
 /// `~/.ssh/...`) into the document. Embedded SVG images get no `<image>` resolution at all
 /// (`usvg` already blanks it for sub-SVGs). An embedded SVG may nest `depth_left` levels: it is
-/// parsed on top of the drawing's own recursion, so the two depths share [`MAX_XML_DEPTH`].
+/// parsed on top of the drawing's own recursion, so the two depths share [`MAX_DRAWING_DEPTH`].
 fn options(fontdb: Arc<usvg::fontdb::Database>, depth_left: usize) -> usvg::Options<'static> {
     let default_resolver = usvg::ImageHrefResolver::default_data_resolver();
     let resolve_data: usvg::ImageHrefDataResolverFn<'static> = Box::new(move |mime, data, opts| {
@@ -316,7 +362,7 @@ fn options(fontdb: Arc<usvg::fontdb::Database>, depth_left: usize) -> usvg::Opti
                 Ok(std::borrow::Cow::Owned(xml)) if !xml.starts_with(&[0x1f, 0x8b]) => ("image/svg+xml", Arc::new(xml)),
                 _ => return None,
             };
-            if nesting_depth(&xml, depth_left) > depth_left {
+            if nesting_depth(&xml, depth_left) > depth_left || std::str::from_utf8(&xml).is_ok_and(|text| read_xml(text, depth_left).is_err()) {
                 return None;
             }
             return default_resolver(mime, xml, opts);
@@ -353,19 +399,19 @@ fn parse(bytes: &[u8]) -> Result<Parsed, IoError> {
 /// [`parse`] with the font database `fonts` supplies (the tests hand in an empty one).
 fn parse_with(bytes: &[u8], fonts: fn() -> Arc<usvg::fontdb::Database>) -> Result<Parsed, IoError> {
     let xml = inflate(bytes)?;
-    let depth = nesting_depth(&xml, MAX_XML_DEPTH);
-    if depth > MAX_XML_DEPTH {
+    if nesting_depth(&xml, MAX_XML_DEPTH) > MAX_XML_DEPTH {
         return Err(IoError::Svg(format!("elements are nested more than {MAX_XML_DEPTH} levels deep")));
     }
+    // Parse the already-bounded-and-decoded text, not `from_data`: that re-checks the gzip magic
+    // and would decompress a second time without our size limit if the inflated content happened
+    // to start with a nested gzip stream.
+    let text = std::str::from_utf8(&xml).map_err(|_| IoError::Svg("the SVG is not valid UTF-8".into()))?;
+    let (doc, depth) = read_xml(text, MAX_DRAWING_DEPTH)?;
     let has_text = xml.windows(4).any(|w| w == b"text");
     let fontdb = if has_text { fonts() } else { Arc::new(usvg::fontdb::Database::new()) };
     let fontless_text = has_text && fontdb.faces().next().is_none();
-    let opt = options(fontdb, MAX_XML_DEPTH.saturating_sub(depth));
-    // Parse the already-bounded-and-decoded text with from_str, not from_data: from_data
-    // re-checks the gzip magic and would decompress a second time without our size limit if
-    // the inflated content happened to start with a nested gzip stream.
-    let text = std::str::from_utf8(&xml).map_err(|_| IoError::Svg("the SVG is not valid UTF-8".into()))?;
-    let tree = usvg::Tree::from_str(text, &opt).map_err(|e| IoError::Svg(e.to_string()))?;
+    let opt = options(fontdb, MAX_DRAWING_DEPTH.saturating_sub(depth));
+    let tree = usvg::Tree::from_xmltree(&doc, &opt).map_err(|e| IoError::Svg(e.to_string()))?;
     Ok(Parsed { tree, fontless_text })
 }
 
@@ -574,7 +620,7 @@ fn parse_image_bounded(bytes: &[u8], budget: Arc<Mutex<ImageBudget>>, depth: usi
 /// [`bounded_data_image`], and the tree's drawing-node count and repeatable image resources are
 /// added to the budget for the caller's work estimate. Fonts load only when text is present.
 /// usvg parses an embedded SVG on top of the drawing's own recursion, so the drawing and the
-/// images inside it share `xml_left` levels of XML nesting ([`MAX_XML_DEPTH`] for the drawing).
+/// images inside it share `xml_left` levels of nesting ([`MAX_DRAWING_DEPTH`] for the drawing).
 /// Byte and decode overruns are also recorded in `budget`, so they fail the whole drawing; a
 /// nesting or syntax error only fails this SVG.
 fn parse_image_bounded_with(
@@ -605,10 +651,13 @@ fn parse_image_bounded_with(
     if left.is_none() {
         return Err(overrun(IoError::Svg("embedded SVG XML exceeds the decoded byte budget".into())));
     }
-    let nesting = nesting_depth(&xml, xml_left);
-    if nesting > xml_left {
+    if nesting_depth(&xml, xml_left) > xml_left {
         return Err(IoError::Svg(format!("elements are nested more than {xml_left} levels deep")));
     }
+    // The bounded inflate above is the only decompression step. `from_data` would detect a
+    // nested gzip payload and inflate it again without the source-byte limit.
+    let text = std::str::from_utf8(&xml).map_err(|_| IoError::Svg("the SVG is not valid UTF-8".into()))?;
+    let (doc, nesting) = read_xml(text, xml_left)?;
     let has_text = xml.windows(4).any(|w| w == b"text");
     let fontdb = if has_text { fonts() } else { Arc::new(usvg::fontdb::Database::new()) };
     if has_text && fontdb.faces().next().is_none() {
@@ -619,10 +668,7 @@ fn parse_image_bounded_with(
     let shared = budget.clone();
     let image_xml_left = xml_left.saturating_sub(nesting);
     opt.image_href_resolver.resolve_data = Box::new(move |mime, data, options| bounded_data_image(mime, data, options, &shared, depth, image_xml_left));
-    // The bounded inflate above is the only decompression step. from_data would detect a
-    // nested gzip payload and inflate it again without the source-byte limit.
-    let text = std::str::from_utf8(&xml).map_err(|_| IoError::Svg("the SVG is not valid UTF-8".into()))?;
-    let tree = usvg::Tree::from_str(text, &opt);
+    let tree = usvg::Tree::from_xmltree(&doc, &opt);
     if let Some(error) = budget.lock().unwrap_or_else(std::sync::PoisonError::into_inner).error.clone() {
         return Err(IoError::Svg(error));
     }
@@ -740,7 +786,7 @@ fn parse_bounded_work_with(bytes: &[u8], max_pixels: u64, strict: bool, fonts: f
         strict,
         error: None,
     }));
-    let tree = parse_image_bounded_with(bytes, budget.clone(), 0, MAX_XML_DEPTH, fonts)?;
+    let tree = parse_image_bounded_with(bytes, budget.clone(), 0, MAX_DRAWING_DEPTH, fonts)?;
     let counter = budget.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let decoded = max_pixels.min(MAX_RASTER_PIXELS).saturating_sub(counter.pixels);
     Ok(ParsedWork {
@@ -893,6 +939,11 @@ pub fn import_svg_preview_with_work(name: &str, bytes: &[u8], max_work: u64) -> 
 }
 
 fn import_svg_bounded_with_work_mode(name: &str, bytes: &[u8], max_work: u64, strict: bool) -> Result<(ImportResult, u64), IoError> {
+    on_svg_stack(|| import_within_work(name, bytes, max_work, strict))
+}
+
+/// [`import_svg_bounded_with_work_mode`] on the stack it is already on.
+fn import_within_work(name: &str, bytes: &[u8], max_work: u64, strict: bool) -> Result<(ImportResult, u64), IoError> {
     if max_work == 0 {
         return Err(IoError::Svg("SVG preview validation work budget is exhausted".into()));
     }
@@ -940,7 +991,7 @@ pub fn import_svg_bounded_layers(name: &str, bytes: &[u8], max_cached_pixels: u6
 /// `max_decoded_pixels` (capped at 24 MP) in all, nested SVG images get the same budget, and
 /// compressed data inflates to at most 16 MiB.
 pub fn import_svg_bounded_images(name: &str, bytes: &[u8], max_decoded_pixels: u64) -> Result<ImportResult, IoError> {
-    import_parsed(name, parse_bounded(bytes, max_decoded_pixels)?, MAX_GROUP_DEPTH, None, false)
+    on_svg_stack(|| import_parsed(name, parse_bounded(bytes, max_decoded_pixels)?, MAX_GROUP_DEPTH, None, false))
 }
 
 /// The pixel bounds [`import_svg_bounded`] gives the drawing, found without rendering any layer
@@ -949,13 +1000,15 @@ pub fn import_svg_bounded_images(name: &str, bytes: &[u8], max_decoded_pixels: u
 /// pixel does not. A smart object's warp frame needs only these bounds, so an SVG whose editable
 /// layer caches exceed the budget (rejected by [`import_svg_bounded_layers`]) still has one.
 pub fn bounded_canvas_bounds(bytes: &[u8], max_cached_pixels: u64) -> Result<Rect, IoError> {
-    let parsed = parse_bounded(bytes, max_cached_pixels)?;
-    let cv = canvas(&parsed.tree, &mut Vec::new());
-    let limit = max_cached_pixels.min(MAX_RASTER_PIXELS);
-    if cv.size.area() > limit {
-        return Err(IoError::Svg(format!("{} × {} px exceeds the SVG layer cache budget of {limit} pixels", cv.size.width, cv.size.height)));
-    }
-    Ok(Rect::from_size(cv.size))
+    on_svg_stack(|| {
+        let parsed = parse_bounded(bytes, max_cached_pixels)?;
+        let cv = canvas(&parsed.tree, &mut Vec::new());
+        let limit = max_cached_pixels.min(MAX_RASTER_PIXELS);
+        if cv.size.area() > limit {
+            return Err(IoError::Svg(format!("{} × {} px exceeds the SVG layer cache budget of {limit} pixels", cv.size.width, cv.size.height)));
+        }
+        Ok(Rect::from_size(cv.size))
+    })
 }
 
 /// Parse (bounded when `max_cached_pixels` is set) and convert to layers; see [`import_parsed_with_limits`].
@@ -966,11 +1019,13 @@ fn import_svg_inner(
     max_cached_pixels: Option<u64>,
     reject_cache_overflow: bool,
 ) -> Result<ImportResult, IoError> {
-    let parsed = match max_cached_pixels {
-        Some(limit) => parse_bounded(bytes, limit)?,
-        None => parse(bytes)?,
-    };
-    import_parsed(name, parsed, max_group_depth, max_cached_pixels, reject_cache_overflow)
+    on_svg_stack(|| {
+        let parsed = match max_cached_pixels {
+            Some(limit) => parse_bounded(bytes, limit)?,
+            None => parse(bytes)?,
+        };
+        import_parsed(name, parsed, max_group_depth, max_cached_pixels, reject_cache_overflow)
+    })
 }
 
 /// [`import_parsed_with_limits`] with the default retained-pixel byte budget.
@@ -1055,23 +1110,24 @@ fn import_parsed_with_limits(
 /// The whole drawing rendered at `scale` (1 = its own size), as a straight-alpha RGBA buffer at
 /// the origin. Smart objects use it to stay sharp at any placement.
 pub fn rasterize(bytes: &[u8], scale: f32) -> Result<photocraft_compose::Buffer, IoError> {
-    let tree = parse(bytes)?.tree;
-    rasterize_tree(&tree, scale)
+    on_svg_stack(|| rasterize_tree(&parse(bytes)?.tree, scale))
 }
 
 /// Render untrusted embedded SVG with intrinsic raster-image and aggregate decode budgets.
 pub fn rasterize_bounded(bytes: &[u8], scale: f32, max_decoded_pixels: u64) -> Result<photocraft_compose::Buffer, IoError> {
-    let (parsed, chain) = parse_bounded_inner(bytes, max_decoded_pixels)?;
-    let tree = parsed.tree;
-    if chain != 0 {
-        let cv = canvas(&tree, &mut Vec::new());
-        let k = cv.scale * scale.clamp(1.0 / 64.0, 64.0);
-        let width = ((tree.size().width() * k).ceil() as u32).max(1);
-        let height = ((tree.size().height() * k).ceil() as u32).max(1);
-        check_scratch_surfaces(u64::from(width) * u64::from(height), chain, max_decoded_pixels)
-            .map_err(|_| IoError::Svg("embedded SVG intermediate images exceed the rendered pixel budget".into()))?;
-    }
-    rasterize_tree(&tree, scale)
+    on_svg_stack(|| {
+        let (parsed, chain) = parse_bounded_inner(bytes, max_decoded_pixels)?;
+        let tree = parsed.tree;
+        if chain != 0 {
+            let cv = canvas(&tree, &mut Vec::new());
+            let k = cv.scale * scale.clamp(1.0 / 64.0, 64.0);
+            let width = ((tree.size().width() * k).ceil() as u32).max(1);
+            let height = ((tree.size().height() * k).ceil() as u32).max(1);
+            check_scratch_surfaces(u64::from(width) * u64::from(height), chain, max_decoded_pixels)
+                .map_err(|_| IoError::Svg("embedded SVG intermediate images exceed the rendered pixel budget".into()))?;
+        }
+        rasterize_tree(&tree, scale)
+    })
 }
 
 /// Render the whole tree at `scale` (clamped to 1/64–64) times its canvas size into a straight-alpha
@@ -1088,6 +1144,11 @@ fn rasterize_tree(tree: &usvg::Tree, scale: f32) -> Result<photocraft_compose::B
 /// [`MAX_RASTER_PIXELS`] in all: its width, height and straight-alpha RGBA8 pixels. Paste uses it
 /// for a drawing copied as SVG markup.
 pub fn rasterize_rgba8(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), IoError> {
+    on_svg_stack(|| rasterize_rgba8_here(bytes))
+}
+
+/// [`rasterize_rgba8`] on the stack it is already on.
+fn rasterize_rgba8_here(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), IoError> {
     let tree = parse(bytes)?.tree;
     let cv = canvas(&tree, &mut Vec::new());
     let (w, h) = (f64::from(tree.size().width() * cv.scale), f64::from(tree.size().height() * cv.scale));
