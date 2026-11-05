@@ -219,10 +219,11 @@ fn blend_channel(mode: i32, cb: f32, cs: f32) -> f32 {
             if (cs >= 1.0) { return 1.0; }
             return min(cb / (1.0 - cs), 1.0);
         }
-        default: {}
+        default: { return cs; }                                 // Normal, Dissolve, PassThrough
     }
-    // Normal, Dissolve, PassThrough. After the switch, not in its default: FXC's optimiser (D3D12
-    // release builds) rejects this function with X3507 when every return is inside the switch.
+    // Never reached. FXC's optimiser (D3D12 release builds) rejects this function with X3507
+    // without it. Keep the default's return too: moving it out here makes the shader compile, but
+    // WARP then takes minutes rather than seconds to draw with it.
     return cs;
 }
 
